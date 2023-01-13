@@ -1,0 +1,71 @@
+""" I should've been using this file as a __running__ journal, but I'm also a loser, sooooooooo... I guess I'm starting new"""
+
+
+--- 12/10/2022
+- Goals:
+	Refactor the convoluted project directory structure, 
+	Make sure I can run the dataset conversions in one command,
+	Finish dataset conversion scripts,
+	Learn rockin around the christmas tree on the guitar,
+
+- Problems:
+	Rocking around is hard
+	n2c2 dataset conversion is a pain in the ass
+	Still not crystal clear how to get dataset conversions to go all at once. I think the current solution might work when all the dataset conversions are done
+
+- Accomplished
+	Refactored the current project into something a little more sensible. It might feel cluttered, but until I have permissions to run subprocesses this is it
+	Mostly done with the new i2b2 conversion
+	Almost done with the n2c2 conversion
+
+
+--- 12/11/2022
+- Goals:
+	Finish the i2b2 conversion
+	Finish the n2c2 conversion
+	Download and start the Onto data conversion
+	Create mini-datasets of all the datasets
+
+- Problems:
+	I still cannot get this stupid fucking Onto data. I'm waiting until they notify me I can download it from their webservice
+
+- Accomplished:
+	Finished the i2b2 conversion
+	Finished the n2c2 conversion
+	Got a really good idea for the 1-click conversion of all the datasets; seems to work when initially testing :)
+	Created a script to get all of the little datasets for testing.
+	
+
+--- 12/12/2022  ON THE TWELFTH DAY OF CHRISTMAS
+- Goals:
+	Complete refactoring of project directory structure. This will be the final
+	Validate the 1-click dataset conversion script
+	Validate the mini-dataset script, combine it with the dataset conversion
+	Write most of experiment 1
+
+- Problems:
+	Still not quite there with experiment 1, have a confounding (truly stupifying) error in the Datagenerator
+
+- Accomplished:
+	Refactor complete, things are where they ought to be and all is well
+	The 1-click conversion script runs and works for all of the domain-specific datasets
+	The mini-dataset script works and is integrated with the dataset_conversion
+	Made some headway on experiment 1, particularly with validating the label preprocessing
+
+
+--- 12/13/2022
+- Goals:
+	Finish writing experiment 1 and validate it
+	Run experiment 1 with domain-specific data
+	Gather the Onto dataset
+	Start conversion script for the onto data (this is going to have to be pruned)
+	Write experiment 2
+
+-Problems
+	I'm a fuckcing problem
+	Experiment 1 runs, but the micro-f1 score doesn't seem quite right, but I'm running it overnight to test how long I expect this to run
+	Onto notes is now available online but I haven't gotten it yet
+	Did not quite get to experiment 2, but I think I learned some things that will make writing it easier
+
+- Accomplished
+	Got most of experiment 1 written, and it mechanically works
