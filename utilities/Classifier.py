@@ -67,7 +67,7 @@ class Classifier:
             training_data,
             epochs=epochs,
             validation_data=validation_data,
-            verbose=SILENT,
+            # verbose=SILENT,
             callbacks=callbacks
         )
 
@@ -81,7 +81,7 @@ class Classifier:
         if not isinstance(x, tf.keras.utils.Sequence):
             tokenized = self.tokenizer(list(x), padding=True, truncation=True, max_length=MAX_NUM_TOKENS, return_tensors='tf')
             x = (tokenized['input_ids'], tokenized['attention_mask'])
-        return self.model.predict(x, batch_size=batch_size, verbose=SILENT)
+        return self.model.predict(x, batch_size=batch_size) # , verbose=SILENT)
 
 
     def evaluate(self, X, y, batch_size=BATCH_SIZE):
@@ -96,7 +96,7 @@ class Classifier:
 #        if not isinstance(X, tf.keras.utils.Sequence):
 #            tokenized = self.tokenizer(list(X), padding=True, truncation=True, max_length=MAX_NUM_TOKENS, return_tensors='tf')
 #            X = (tokenized['input_ids'], tokenized['attention_mask'])
-        return self.model.evaluate(dg, verbose=SILENT)
+        return self.model.evaluate(dg) # , verbose=SILENT)
 
 
 class MultiClass_Token_Classifier(Classifier):

@@ -48,7 +48,6 @@ class Dataset:
     
 
 class Token_Classification_Dataset(Dataset):
-
     def __init__(self, data_file_path, num_classes, language_model_name, seed=SEED, test_set_size=0):
         Dataset.__init__(self, seed=seed, test_set_size=test_set_size)
         self.num_classes = num_classes
@@ -57,15 +56,20 @@ class Token_Classification_Dataset(Dataset):
 
         self.labels = np.zeros([len(self.df['annotation']), MAX_NUM_TOKENS, num_classes])
         # Need to make a big array that is ixjxnum_classes, where i is the ith token, j is the number of tokens
+        num_lost = 0
+
         num_samples = len(self.df['annotation'])
         for i in range(num_samples):
             num_tokens = len(self.df['annotation'][i])
-            for j in range(num_tokens):
+            if num_tokens > 512:
+                num_lost += num_tokens - 512
+            for j in range(num_tokens)[:MAX_NUM_TOKENS]:
                 positive_class_index = self.df['annotation'][i][j]
                 self.labels[i][j][int(positive_class_index)] = 1.0
 
         self.data = self.df["text"].tolist()
         self._test_train_split(self.data, self.labels)
+        print("Number of lost tokens:", num_lost)
         
 
     def preprocess(self, input_file, tokenizer):

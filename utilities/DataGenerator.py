@@ -17,10 +17,12 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.x = x_set
         self.y = y_set
         self.batch_size = BATCH_SIZE
+        print("BATCH_SIZE=", BATCH_SIZE)
         self.shuffle = shuffle
         self.tokenizer = tokenizer
 
     def __len__(self):
+        print("len:", int(np.ceil(len(self.x) / self.batch_size)))
         return int(np.ceil(len(self.x) / self.batch_size))
 
     def __getitem__(self, idx):
