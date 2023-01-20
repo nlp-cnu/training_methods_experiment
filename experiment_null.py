@@ -15,6 +15,7 @@ import tensorflow as tf
 from transformers import logging
 
 from utilities.Classifier import *
+# from utilities.Dataset_ import *
 from utilities.Dataset import *
 from utilities.constants import *
 
@@ -27,20 +28,36 @@ def dataset_test():
         class_map = DATASET_TO_CLASS_MAP[dataset_name]
         num_classes = len(class_map)
         print("Class mapping:", class_map)
-        for language_model in ALL_MODELS[0:1]:
+        for language_model in ALL_MODELS[2:3]:
             language_model_name = language_model.split(os.sep)[-1]
             print("\tLanguage model:" + language_model_name)
             
             training_file_path = os.path.join(dataset_path, CONVERTED_DATASET_FILE)
+            # training_file_path = os.path.join("copy_training_data.tsv")
             
             data = Token_Classification_Dataset(training_file_path, num_classes, language_model, seed=SEED)
-            folds = list(data.get_folds(NUM_FOLDS))
+            # folds = list(data.get_folds(NUM_FOLDS))
+            folds = list(data.get_folds(2))
 
             test_micro_f1 = []
             test_macro_f1 = []
 
+
+            predictions = []
+            golds = []
+
+            # Test code 
+
+            # train_data = np.array(data.data)
+            # train_labels = np.array(data.labels)
+            # classifier = MultiClass_Token_Classifier(language_model, num_classes)
+            # classifier.train(train_data, train_labels)
+
+            # ^^^^^^^^^^^^
+
             for index, train_test in enumerate(folds):
-                print(f"FOLD {index}")
+                # print("Train test:", train_test)
+                # print(f"FOLD {index}")
                 train_index, test_index = train_test
                 train_data = np.array(data.data)[train_index]
                 train_labels = np.array(data.labels)[train_index]
@@ -60,14 +77,42 @@ def dataset_test():
                 classifier = MultiClass_Token_Classifier(language_model, num_classes)
                 print(f"Test history fold_{index}:", classifier.train(train_data, train_labels, epochs=num_epochs).history)
 
-                predictions = classifier.evaluate(test_data, test_labels, batch_size=BATCH_SIZE)
-                test_micro_f1.append(predictions[1])
-                test_macro_f1.append(predictions[2])
+                # print("Predictions:", classifier.predict(test_data))
+                # print("Gold standard:", test_labels)
+                # Is there a difference between predict and evaluate? vvvv
+                
+                predictions.append(classifier.predict(test_data))
+                golds.append(test_labels)
+
+                # ^^^^^^^^^^^^^^
+
+                evaluation = classifier.evaluate(test_data, test_labels, batch_size=BATCH_SIZE)
+
+                test_micro_f1.append(evaluation[1])
+                test_macro_f1.append(evaluation[2])
                 print()
 
-            print()
+            print("Model test scores using evaluate:")
             print("Test_micro_f1 across all folds:", test_micro_f1)
+            print(f"Test_micro_f1 average score={np.mean(test_micro_f1)}, standard_deviation={np.std(test_micro_f1)}")
             print("Test_macro_f1 across all folds:", test_macro_f1)
+            print(f"Test_macro_f1 average score={np.mean(test_macro_f1)}, standard_deviation={np.std(test_macro_f1)}")
+
+            pred_micro_f1s = []
+            pred_macro_f1s = []
+
+            print()
+            print("Model test scores using predict:")
+            for p, g in zip(predictions, golds):
+                p = p[:, :len(g[0]), :]
+                pred_micro_f1s.append(classifier.micro_f1(g, p))
+                pred_macro_f1s.append(classifier.macro_f1(g, p))
+
+            print("Test_micro_f1 across all folds:", pred_micro_f1s)
+            print(f"Test_micro_f1 average score={np.mean(pred_micro_f1s)}, standard_deviation={np.std(test_micro_f1)}")
+            print("Test_macro_f1 across all folds:", pred_macro_f1s)
+            print(f"Test_macro_f1 average score={np.mean(pred_macro_f1s)}, standard_deviation={np.std(test_macro_f1)}")
+
 
 
 if __name__ == "__main__":

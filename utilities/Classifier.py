@@ -60,7 +60,7 @@ class Classifier:
             callbacks.append(csv_logger)
 
         if early_stop_patience:
-            early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_micro_f1', patience=early_stop_patience, mode='max') # , restore_best_weights) <== auto tracks model weights with best scores
+            early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=early_stop_patience, mode='max') # , restore_best_weights) <== auto tracks model weights with best scores
             callbacks.append(early_stop)
 
         return self.model.fit(
@@ -126,7 +126,7 @@ class MultiClass_Token_Classifier(Classifier):
         # create the embeddings - the 0th index is the last hidden layer
         embeddings = language_model(input_ids=input_ids, attention_mask=input_padding_mask)[0]
 
-        softmax_layer = tf.keras.layers.Dense(num_classes, activation='softmax')
+        softmax_layer = tf.keras.layers.Dense(self.num_classes, activation='softmax')
         final_output = softmax_layer(embeddings)
         
         self.model = Model(inputs=[input_ids, input_padding_mask], outputs=[final_output])

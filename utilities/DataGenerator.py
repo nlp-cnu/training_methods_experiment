@@ -17,17 +17,32 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.x = x_set
         self.y = y_set
         self.batch_size = BATCH_SIZE
-        print("BATCH_SIZE=", BATCH_SIZE)
         self.shuffle = shuffle
         self.tokenizer = tokenizer
 
     def __len__(self):
-        print("len:", int(np.ceil(len(self.x) / self.batch_size)))
         return int(np.ceil(len(self.x) / self.batch_size))
 
     def __getitem__(self, idx):
         batch_x = list(self.x[idx * self.batch_size:(idx + 1) * self.batch_size])
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
+        
+#         index = 0
+#         for x, y in zip(batch_x, batch_y):
+#             print("-"*50)
+#             print(index)
+#             print("x:", x)
+#             print(self.tokenizer(x, padding=True, truncation=True, max_length=MAX_NUM_TOKENS, return_tensors='tf')["input_ids"])
+#             print("y:")
+#             for label in y[:20]:
+#                 print(label)
+#             print("-"*50)
+#             
+#             index += 1
+#             
+#         raise Exception()
+
+
         tokenized = self.tokenizer(batch_x, padding=True, truncation=True, max_length=MAX_NUM_TOKENS, return_tensors='tf')
 
         num_samples = tokenized['input_ids'].shape[0]

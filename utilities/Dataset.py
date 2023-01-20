@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.utils import class_weight
 from transformers import AutoTokenizer, TFAutoModel
 
@@ -54,7 +53,8 @@ class Token_Classification_Dataset(Dataset):
         tokenizer = AutoTokenizer.from_pretrained(language_model_name)
         self.df = self.preprocess(data_file_path, tokenizer)
 
-        self.labels = np.zeros([len(self.df['annotation']), MAX_NUM_TOKENS, num_classes])
+        self.labels = np.zeros([len(self.df['annotation']), MAX_NUM_TOKENS, self.num_classes])
+
         # Need to make a big array that is ixjxnum_classes, where i is the ith token, j is the number of tokens
         num_lost = 0
 
@@ -93,7 +93,6 @@ class Token_Classification_Dataset(Dataset):
         
 
         df = pd.read_csv(input_file, delimiter='\t', header=None, names=['text', 'annotation'], keep_default_na=False, quoting=csv.QUOTE_NONE)
-        df = df.sample(frac=1, random_state=SEED)
         df['annotation'] = df['annotation'].apply(literal_eval)
         df['annotation'] = df.apply(tokenize_sample, tokenizer=tokenizer, axis=1)
 
