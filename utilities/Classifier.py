@@ -12,7 +12,6 @@ from tensorflow import keras
 import numpy as np
 
 from utilities.DataGenerator import *
-from utilities.metrics import *
 from utilities.constants import *
 
 

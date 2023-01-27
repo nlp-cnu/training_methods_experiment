@@ -16,7 +16,10 @@ class DataGenerator(tf.keras.utils.Sequence):
     def __init__(self, x_set, y_set, tokenizer, shuffle=True):
         self.x = x_set
         self.y = y_set
-        self.batch_size = BATCH_SIZE
+        # self.batch_size = BATCH_SIZE
+        # For NOW
+        print("CHANGE BATCH SIZE BACK AFTER TESTING (DG CLASS)")
+        self.batch_size = 50
         self.shuffle = shuffle
         self.tokenizer = tokenizer
 
