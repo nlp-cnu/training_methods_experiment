@@ -28,11 +28,11 @@ def dataset_test():
         class_map = DATASET_TO_CLASS_MAP[dataset_name]
         num_classes = len(class_map)
         print("Class mapping:", class_map)
-        for language_model in ALL_MODELS[2:3]:
+        for language_model in ALL_MODELS[0:2]:
             language_model_name = language_model.split(os.sep)[-1]
             print("\tLanguage model:" + language_model_name)
             
-            training_file_path = os.path.join(dataset_path, CONVERTED_DATASET_FILE)
+            training_file_path = os.path.join(dataset_path, CONVERTED_DATASET_FILE_MINI)
             
             data = Token_Classification_Dataset(training_file_path, num_classes, language_model, seed=SEED)
             # folds = list(data.get_folds(NUM_FOLDS))
@@ -43,7 +43,6 @@ def dataset_test():
 
 
             predictions = []
-            test_samples = []
             golds = []
 
             for index, train_test in enumerate(folds):
@@ -58,13 +57,13 @@ def dataset_test():
                 classifier = MultiClass_Token_Classifier(language_model, num_classes)
                 validation_metrics = classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels), early_stop_patience=EARLY_STOPPING_PATIENCE)
                 validation_history = validation_metrics.history
-                print(f"Validation history fold_{index}:", validation_history)
+                # print(f"Validation history fold_{index}:", validation_history)
                 target_metric = validation_history['val_micro_f1']
                 
                 num_epochs = target_metric.index(max(target_metric)) + 1
                 
                 classifier = MultiClass_Token_Classifier(language_model, num_classes)
-                print(f"Test history fold_{index}:", classifier.train(train_data, train_labels, epochs=num_epochs).history)
+                # print(f"Test history fold_{index}:", classifier.train(train_data, train_labels, epochs=num_epochs).history)
 
                 ps = classifier.predict(test_data)
                 predictions.append(classifier.predict(test_data))
@@ -72,18 +71,10 @@ def dataset_test():
 
                 # ^^^^^^^^^^^^^^
 
-                evaluation = classifier.evaluate(test_data, test_labels, batch_size=BATCH_SIZE)
-
-                test_micro_f1.append(evaluation[1])
-                test_macro_f1.append(evaluation[2])
-                print()
-
-            print("Model test scores using evaluate:")
-            print("Test_micro_f1 across all folds:", test_micro_f1)
-            print(f"Test_micro_f1 average score={np.mean(test_micro_f1)}, standard_deviation={np.std(test_micro_f1)}")
-            print("Test_macro_f1 across all folds:", test_macro_f1)
-            print(f"Test_macro_f1 average score={np.mean(test_macro_f1)}, standard_deviation={np.std(test_macro_f1)}")
-
+            pred_micro_precisions = []
+            pred_macro_precisions = []
+            pred_micro_recalls = []
+            pred_macro_recalls = []
             pred_micro_f1s = []
             pred_macro_f1s = []
 
@@ -95,39 +86,66 @@ def dataset_test():
                 # making y_pred and y_true have the same size by trimming
                 num_samples = p.shape[0]
                 max_num_tokens_in_batch = p.shape[1]
-                # Transforms g to the same size as P and removes the NONE class
-                # g = g[:, :max_num_tokens_in_batch, 1:]
-                g = g[:, :max_num_tokens_in_batch, :]
+                # Transforms g to the same size as P
                 # removes the NONE class
-                predictions = []
+                g = g[:, :max_num_tokens_in_batch, :]
+
+                gt_final = []
+                pred_final = []
+
                 for sample_pred, sample_gt, i in zip(p, g, range(num_samples)):
+                    # vv Find where the gt labels stop (preds will be junk after this) and trim the labels and predictions vv
+                    trim_index = 0
+                    while trim_index < len(sample_gt) and not all(v == 0 for v in sample_gt[trim_index]):
+                        trim_index += 1
+                    sample_gt = sample_gt[:trim_index, :]
+                    for s in sample_gt:
+                        gt_final.append(s.tolist())
+
                     sample_pred = (sample_pred == sample_pred.max(axis=1)[:,None]).astype(int)
-                    p[i] = sample_pred
-                
-                # p = p[:, :, 1:]
+                    sample_pred = sample_pred[:trim_index, :]
+                    for s in sample_pred:
+                        pred_final.append(s.tolist())
 
-                num_classes_remaining = p.shape[-1]
-                p = p.reshape((-1, num_classes_remaining))
-                g = g.reshape((-1, num_classes_remaining))
+                    # ^^^^^
+                # Transforming the predictions and labels so that the NONE class is not counted
+                p = np.array(pred_final)
+                g = np.array(gt_final)
 
-                print("Report before none class:") 
-                print("P before:", p.shape)
-                print("G before:", g.shape)
-                print("class 1234 predicts:", np.sum(p, axis=0))
-                print("class 1234 ground truth:", np.sum(g, axis=0))
+                p = p.reshape((-1, num_classes))[:, 1:]
+                g = g.reshape((-1, num_classes))[:, 1:]
 
-                print(classification_report(g, p, target_names=["none", "problem", "treatment", "test"]))
+                # Calculating the metrics w/ sklearn
+                target_names = list(class_map)[1:]
+                report_metrics = classification_report(g, p, target_names=target_names, digits=3, output_dict=True)
 
-                g = g[:, 1:]
-                p = p[:, 1:]
+                # writing the reported metrics to a file
+                micro_averaged_stats = report_metrics["micro avg"]
+                micro_precision = micro_averaged_stats["precision"]
+                pred_micro_precisions.append(micro_precision)
+                micro_recall = micro_averaged_stats["recall"]
+                pred_micro_recalls.append(micro_recall)
+                micro_f1 = micro_averaged_stats["f1-score"]
+                pred_micro_f1s.append(micro_f1)
 
-                print("Report after none class:")
-                print("P after:", p.shape)
-                print("G after:", g.shape)
-                print("class 1234 predicts:", np.sum(p, axis=0))
-                print("class 1234 ground truth:", np.sum(g, axis=0))
-                
-                print(classification_report(g, p, target_names=["problem", "treatment", "test"]))
+                macro_averaged_stats = report_metrics["macro avg"]
+                macro_precision = macro_averaged_stats["precision"]
+                pred_macro_precisions.append(macro_precision)
+                macro_recall = macro_averaged_stats["recall"]
+                pred_macro_recalls.append(macro_recall)
+                macro_f1 = macro_averaged_stats["f1-score"]
+                pred_macro_f1s.append(macro_f1)
+
+            
+
+            print("Micro averaged stats:")
+            print(f"p:av={np.mean(pred_micro_precisions)}, std={np.std(pred_micro_precisions)}")
+            print(f"r:av={np.mean(pred_micro_recalls)}, std={np.std(pred_micro_recalls)}")
+            print(f"f1:av={np.mean(pred_micro_f1s)}, std={np.std(pred_micro_f1s)}")
+            print("Macro averaged stats:")
+            print(f"p:av={np.mean(pred_macro_precisions)}, std={np.std(pred_macro_precisions)}")
+            print(f"r:av={np.mean(pred_macro_recalls)}, std={np.std(pred_macro_recalls)}")
+            print(f"f1:av={np.mean(pred_macro_f1s)}, std={np.std(pred_macro_f1s)}")
 
 
 if __name__ == "__main__":

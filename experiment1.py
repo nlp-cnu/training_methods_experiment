@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
 import tensorflow as tf
 from transformers import logging
 
@@ -17,11 +18,14 @@ from utilities.constants import *
 def run_experiment_1():
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.FATAL)
     logging.set_verbosity("ERROR")
+    # If there is an existing results file, get rid of it
     final_results_file = os.path.join(RESULTS_DIR_PATH, EXPERIMENT_1_RESULTS, FINAL_RESULTS_FILE)
     if os.path.isfile(final_results_file):
         os.remove(final_results_file)
+    # Set the header of the results file, getting macro & micro precision, recall, and f1s
     with open(final_results_file, "a+") as f:
-        f.write("dataset\tlm_name\tmicro_f1_av\tmicro_f1_std\tmacro_f1_av\tmacro_f1_std\n")
+        f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\n")
+
     for dataset_path in DOMAIN_SPECIFIC_DATASETS:
         dataset_name = dataset_path.split(os.sep)[-1]
         print("Dataset:", dataset_name)
@@ -33,15 +37,14 @@ def run_experiment_1():
             print("\tLanguage model:" + language_model_name)
             
             training_file_path = os.path.join(dataset_path, CONVERTED_DATASET_FILE)
-            
             test_results_path = os.path.join(RESULTS_DIR_PATH, EXPERIMENT_1_RESULTS)
             Path(test_results_path).mkdir(parents=True, exist_ok=True)
 
             data = Token_Classification_Dataset(training_file_path, num_classes, language_model, seed=SEED)
             folds = list(data.get_folds(NUM_FOLDS))
 
-            test_micro_f1 = []
-            test_macro_f1 = []
+            predictions = []
+            golds = []
 
             for index, train_test in enumerate(folds):
                 train_index, test_index = train_test
@@ -64,21 +67,95 @@ def run_experiment_1():
                 test_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_test_{index}.csv")
                 classifier.train(train_data, train_labels, epochs=num_epochs, csv_log_file=test_csv_log_file)
 
-                predictions = classifier.evaluate(test_data, test_labels, batch_size=BATCH_SIZE)
-                test_micro_f1.append(predictions[1])
-                test_macro_f1.append(predictions[2])
+
+                predictions.append(classifier.predict(test_data))
+                golds.append(test_labels)
                 
                 K.clear_session()
                 gc.collect()
                 del classifier
 
-            micro_f1_mean = np.mean(test_micro_f1)
-            micro_f1_stddev = np.std(test_micro_f1)
-            macro_f1_mean = np.mean(test_macro_f1)
-            macro_f1_stddev = np.std(test_macro_f1)
+            pred_micro_precisions = []
+            pred_macro_precisions = []
+            pred_micro_recalls = []
+            pred_macro_recalls = []
+            pred_micro_f1s = []
+            pred_macro_f1s = []
 
+            # For each fold there is a y_true and y_pred
+            for p, g in zip(predictions, golds):
+                # making y_pred and y_true have the same size by trimming
+                num_samples = p.shape[0]
+                max_num_tokens_in_batch = p.shape[1]
+                # Transforms g to the same size as P
+                # removes the NONE class
+                g = g[:, :max_num_tokens_in_batch, :]
+
+                gt_final = []
+                pred_final = []
+
+                for sample_pred, sample_gt, i in zip(p, g, range(num_samples)):
+                    # vv Find where the gt labels stop (preds will be junk after this) and trim the labels and predictions vv
+                    trim_index = 0
+                    while trim_index < len(sample_gt) and not all(v == 0 for v in sample_gt[trim_index]):
+                        trim_index += 1
+                    sample_gt = sample_gt[:trim_index, :]
+                    for s in sample_gt:
+                        gt_final.append(s.tolist())
+
+                    sample_pred = (sample_pred == sample_pred.max(axis=1)[:,None]).astype(int)
+                    sample_pred = sample_pred[:trim_index, :]
+                    for s in sample_pred:
+                        pred_final.append(s.tolist())
+
+                    # ^^^^^
+                # Transforming the predictions and labels so that the NONE class is not counted
+                p = np.array(pred_final)
+                g = np.array(gt_final)
+
+                p = p.reshape((-1, num_classes))[:, 1:]
+                g = g.reshape((-1, num_classes))[:, 1:]
+
+                # Calculating the metrics w/ sklearn
+                target_names = list(class_map)[1:]
+                report_metrics = classification_report(g, p, target_names=target_names, digits=3, output_dict=True)
+
+                # collecting the reported metrics
+                micro_averaged_stats = report_metrics["micro avg"]
+                micro_precision = micro_averaged_stats["precision"]
+                pred_micro_precisions.append(micro_precision)
+                micro_recall = micro_averaged_stats["recall"]
+                pred_micro_recalls.append(micro_recall)
+                micro_f1 = micro_averaged_stats["f1-score"]
+                pred_micro_f1s.append(micro_f1)
+
+                macro_averaged_stats = report_metrics["macro avg"]
+                macro_precision = macro_averaged_stats["precision"]
+                pred_macro_precisions.append(macro_precision)
+                macro_recall = macro_averaged_stats["recall"]
+                pred_macro_recalls.append(macro_recall)
+                macro_f1 = macro_averaged_stats["f1-score"]
+                pred_macro_f1s.append(macro_f1)
+
+            
+            # Writing the reported metrics to file
+            micro_precision_av = np.mean(pred_micro_precisions)
+            micro_precision_std = np.std(pred_micro_precisions)
+            micro_recall_av = np.mean(pred_micro_recalls)
+            micro_recall_std = np.std(pred_micro_recalls)
+            micro_f1_av = np.mean(pred_micro_f1s)
+            micro_f1_std = np.std(pred_micro_f1s)
+
+            macro_precision_av = np.mean(pred_macro_precisions)
+            macro_precision_std = np.std(pred_macro_precisions)
+            macro_recall_av = np.mean(pred_macro_recalls)
+            macro_recall_std = np.std(pred_macro_recalls)
+            macro_f1_av = np.mean(pred_macro_f1s)
+            macro_f1_std = np.std(pred_macro_f1s)
+
+            # f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\n")
             with open(final_results_file, "a+") as f:
-                f.write(f"{dataset_name}\t{language_model_name}\t{micro_f1_mean}\t{micro_f1_stddev}\t{macro_f1_mean}\t{macro_f1_stddev}\n")
+                f.write(f"{dataset_name}\t{language_model_name}\t{micro_precision_av}\t{micro_precision_std}\t{micro_recall_av}\t{micro_recall_std}\t{micro_f1_av}\t{micro_f1_std}\t{macro_precision_av}\t{macro_precision_std}\t{macro_recall_av}\t{macro_recall_std}\t{macro_f1_av}{macro_f1_std}\n")
 
             
 

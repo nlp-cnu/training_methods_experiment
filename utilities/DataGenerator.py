@@ -13,13 +13,10 @@ class DataGenerator(tf.keras.utils.Sequence):
     variable size batches. (depending on the maximum length of sequences in the batch) 
     """
     
-    def __init__(self, x_set, y_set, tokenizer, shuffle=True):
+    def __init__(self, x_set, y_set, tokenizer, batch_size=BATCH_SIZE, shuffle=True):
         self.x = x_set
         self.y = y_set
-        # self.batch_size = BATCH_SIZE
-        # For NOW
-        print("CHANGE BATCH SIZE BACK AFTER TESTING (DG CLASS)")
-        self.batch_size = 50
+        self.batch_size = batch_size
         self.shuffle = shuffle
         self.tokenizer = tokenizer
 
@@ -29,22 +26,6 @@ class DataGenerator(tf.keras.utils.Sequence):
     def __getitem__(self, idx):
         batch_x = list(self.x[idx * self.batch_size:(idx + 1) * self.batch_size])
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
-        
-#         index = 0
-#         for x, y in zip(batch_x, batch_y):
-#             print("-"*50)
-#             print(index)
-#             print("x:", x)
-#             print(self.tokenizer(x, padding=True, truncation=True, max_length=MAX_NUM_TOKENS, return_tensors='tf')["input_ids"])
-#             print("y:")
-#             for label in y[:20]:
-#                 print(label)
-#             print("-"*50)
-#             
-#             index += 1
-#             
-#         raise Exception()
-
 
         tokenized = self.tokenizer(batch_x, padding=True, truncation=True, max_length=MAX_NUM_TOKENS, return_tensors='tf')
 

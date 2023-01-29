@@ -48,10 +48,10 @@ class Classifier:
                 so, validation_data[0] = val_x and validation_data[1] = val_y
         :param epochs: the number of epochs to train for
         """
-        training_data = DataGenerator(x, y, self.tokenizer)
+        training_data = DataGenerator(x, y, self.tokenizer, batch_size=batch_size)
 
         if validation_data is not None:
-            validation_data = DataGenerator(validation_data[0], validation_data[1], self.tokenizer)
+            validation_data = DataGenerator(validation_data[0], validation_data[1], self.tokenizer, batch_size=batch_size)
 
         callbacks = []
         if csv_log_file:
@@ -59,14 +59,14 @@ class Classifier:
             callbacks.append(csv_logger)
 
         if early_stop_patience:
-            early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=early_stop_patience, mode='max') # , restore_best_weights) <== auto tracks model weights with best scores
+            early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_micro_f1', patience=early_stop_patience, mode='max') # , restore_best_weights) <== auto tracks model weights with best scores
             callbacks.append(early_stop)
 
         return self.model.fit(
             training_data,
             epochs=epochs,
             validation_data=validation_data,
-            # verbose=SILENT,
+            verbose=SILENT,
             callbacks=callbacks
         )
 
@@ -80,7 +80,7 @@ class Classifier:
         if not isinstance(x, tf.keras.utils.Sequence):
             tokenized = self.tokenizer(list(x), padding=True, truncation=True, max_length=MAX_NUM_TOKENS, return_tensors='tf')
             x = (tokenized['input_ids'], tokenized['attention_mask'])
-        return self.model.predict(x, batch_size=batch_size) # , verbose=SILENT)
+        return self.model.predict(x, batch_size=batch_size, verbose=SILENT)
 
 
     def evaluate(self, X, y, batch_size=BATCH_SIZE):
@@ -91,7 +91,7 @@ class Classifier:
         :param batch_size: batch size
         :return: tf.History object
         """
-        dg = DataGenerator(X, y, self.tokenizer)
+        dg = DataGenerator(X, y, self.tokenizer, batch_size=batch_size)
 #        if not isinstance(X, tf.keras.utils.Sequence):
 #            tokenized = self.tokenizer(list(X), padding=True, truncation=True, max_length=MAX_NUM_TOKENS, return_tensors='tf')
 #            X = (tokenized['input_ids'], tokenized['attention_mask'])
