@@ -26,7 +26,7 @@ def run_experiment_1():
     with open(final_results_file, "a+") as f:
         f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\n")
 
-    for dataset_path in DOMAIN_SPECIFIC_DATASETS[4:]:
+    for dataset_path in DOMAIN_SPECIFIC_DATASETS[5:]:
         dataset_name = dataset_path.split(os.sep)[-1]
         print("Dataset:", dataset_name)
         class_map = DATASET_TO_CLASS_MAP[dataset_name]
@@ -117,25 +117,51 @@ def run_experiment_1():
                 g = g.reshape((-1, num_classes))[:, 1:]
 
                 # Calculating the metrics w/ sklearn
-                target_names = list(class_map)[1:]
-                report_metrics = classification_report(g, p, target_names=target_names, digits=3, output_dict=True)
+                binary_task = len(class_map) == 2
 
-                # collecting the reported metrics
-                micro_averaged_stats = report_metrics["micro avg"]
-                micro_precision = micro_averaged_stats["precision"]
-                pred_micro_precisions.append(micro_precision)
-                micro_recall = micro_averaged_stats["recall"]
-                pred_micro_recalls.append(micro_recall)
-                micro_f1 = micro_averaged_stats["f1-score"]
-                pred_micro_f1s.append(micro_f1)
+                if binary_task:
+                    target_names = list(class_map)
+                    report_metrics = classification_report(g, p, target_names=target_names, digits=3, output_dict=True)
 
-                macro_averaged_stats = report_metrics["macro avg"]
-                macro_precision = macro_averaged_stats["precision"]
-                pred_macro_precisions.append(macro_precision)
-                macro_recall = macro_averaged_stats["recall"]
-                pred_macro_recalls.append(macro_recall)
-                macro_f1 = macro_averaged_stats["f1-score"]
-                pred_macro_f1s.append(macro_f1)
+                    # collecting the reported metrics
+                    # The macro and micro f1 scores are the same for the binary classification task
+                    micro_averaged_stats = report_metrics["macro avg"]
+                    micro_precision = micro_averaged_stats["precision"]
+                    pred_micro_precisions.append(micro_precision)
+                    micro_recall = micro_averaged_stats["recall"]
+                    pred_micro_recalls.append(micro_recall)
+                    micro_f1 = micro_averaged_stats["f1-score"]
+                    pred_micro_f1s.append(micro_f1)
+
+                    macro_averaged_stats = report_metrics["macro avg"]
+                    macro_precision = macro_averaged_stats["precision"]
+                    pred_macro_precisions.append(macro_precision)
+                    macro_recall = macro_averaged_stats["recall"]
+                    pred_macro_recalls.append(macro_recall)
+                    macro_f1 = macro_averaged_stats["f1-score"]
+                    pred_macro_f1s.append(macro_f1)
+
+
+                else:
+                    target_names = list(class_map)[1:]
+                    report_metrics = classification_report(g, p, target_names=target_names, digits=3, output_dict=True)
+
+                    # collecting the reported metrics
+                    micro_averaged_stats = report_metrics["micro avg"]
+                    micro_precision = micro_averaged_stats["precision"]
+                    pred_micro_precisions.append(micro_precision)
+                    micro_recall = micro_averaged_stats["recall"]
+                    pred_micro_recalls.append(micro_recall)
+                    micro_f1 = micro_averaged_stats["f1-score"]
+                    pred_micro_f1s.append(micro_f1)
+
+                    macro_averaged_stats = report_metrics["macro avg"]
+                    macro_precision = macro_averaged_stats["precision"]
+                    pred_macro_precisions.append(macro_precision)
+                    macro_recall = macro_averaged_stats["recall"]
+                    pred_macro_recalls.append(macro_recall)
+                    macro_f1 = macro_averaged_stats["f1-score"]
+                    pred_macro_f1s.append(macro_f1)
 
             
             # Writing the reported metrics to file
@@ -153,7 +179,6 @@ def run_experiment_1():
             macro_f1_av = np.mean(pred_macro_f1s)
             macro_f1_std = np.std(pred_macro_f1s)
 
-            # f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\n")
             with open(final_results_file, "a+") as f:
                 f.write(f"{dataset_name}\t{language_model_name}\t{micro_precision_av}\t{micro_precision_std}\t{micro_recall_av}\t{micro_recall_std}\t{micro_f1_av}\t{micro_f1_std}\t{macro_precision_av}\t{macro_precision_std}\t{macro_recall_av}\t{macro_recall_std}\t{macro_f1_av}{macro_f1_std}\n")
 

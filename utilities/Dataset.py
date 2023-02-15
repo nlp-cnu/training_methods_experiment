@@ -50,7 +50,7 @@ class Token_Classification_Dataset(Dataset):
     def __init__(self, data_file_path, num_classes, language_model_name, seed=SEED, test_set_size=0):
         Dataset.__init__(self, seed=seed, test_set_size=test_set_size)
         self.num_classes = num_classes
-        tokenizer = AutoTokenizer.from_pretrained(language_model_name)
+        tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         self.df = self.preprocess(data_file_path, tokenizer)
 
         self.labels = np.zeros([len(self.df['annotation']), MAX_NUM_TOKENS, self.num_classes])

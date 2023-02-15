@@ -36,6 +36,7 @@ class Classifier:
         """
         self.tokenizer = None
         self.model = None
+        self.language_model = None
 
 
     def train(self, x, y, batch_size=BATCH_SIZE, validation_data=None, epochs=MAX_EPOCHS, csv_log_file=None, early_stop_patience=None):
@@ -98,6 +99,10 @@ class Classifier:
         return self.model.evaluate(dg) # , verbose=SILENT)
 
 
+    def save_weights(self, directory_path):
+        self.language_model.save_pretrained(directory_path)
+
+
 class MultiClass_Token_Classifier(Classifier):
 
     """
@@ -109,21 +114,23 @@ class MultiClass_Token_Classifier(Classifier):
         self.num_classes = num_classes
 
         # create the tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(self.language_model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
 
         # create the language model
-        if os.path.isdir(language_model_name):
-            language_model = TFBertModel.from_pretrained(self.language_model_name, from_pt=True, local_files_only=True)
-        else:
-            language_model = TFAutoModel.from_pretrained(self.language_model_name)
-        language_model.trainable = True
+#        if os.path.isdir(language_model_name):
+#            self.language_model = TFBertModel.from_pretrained(self.language_model_name, from_pt=False, local_files_only=True)
+#        else:
+#            self.language_model = TFAutoModel.from_pretrained(self.language_model_name)
+        self.language_model = TFBertModel.from_pretrained("../models/new_model")
+
+        self.language_model.trainable = True
 
         # Model takes the tokenizer input_ids and padding_mask
         input_ids = Input(shape=(None,), dtype=tf.int32, name="input_ids")
         input_padding_mask = Input(shape=(None,), dtype=tf.int32, name="input_padding_mask")
 
         # create the embeddings - the 0th index is the last hidden layer
-        embeddings = language_model(input_ids=input_ids, attention_mask=input_padding_mask)[0]
+        embeddings = self.language_model(input_ids=input_ids, attention_mask=input_padding_mask)[0]
 
         softmax_layer = tf.keras.layers.Dense(self.num_classes, activation='softmax')
         final_output = softmax_layer(embeddings)
