@@ -19,14 +19,14 @@ def run_experiment_1():
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.FATAL)
     logging.set_verbosity("ERROR")
     # If there is an existing results file, get rid of it
-    final_results_file = os.path.join(RESULTS_DIR_PATH, EXPERIMENT_1_RESULTS, FINAL_RESULTS_FILE)
+    final_results_file = os.path.join(RESULTS_DIR_PATH, EXPERIMENT_1_RESULTS, FINAL_RESULTS_FILE_AMMIT)
     if os.path.isfile(final_results_file):
         os.remove(final_results_file)
     # Set the header of the results file, getting macro & micro precision, recall, and f1s
     with open(final_results_file, "a+") as f:
         f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\n")
 
-    for dataset_path in DOMAIN_SPECIFIC_DATASETS[4:]:
+    for dataset_path in DOMAIN_SPECIFIC_DATASETS[5:]:
         dataset_name = dataset_path.split(os.sep)[-1]
         print("Dataset:", dataset_name)
         class_map = DATASET_TO_CLASS_MAP[dataset_name]
