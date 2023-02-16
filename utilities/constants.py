@@ -109,6 +109,8 @@ ALL_MODELS = [BASE_BERT, BIO_BERT, PUBMED_BERT, BIOCLINICAL_BERT, BIOCLINICAL_DI
 
 DOMAIN_SPECIFIC_MODELS = ALL_MODELS[1:]
 
+EXP1_WINNING_MODELS = [BLUE_BERT_PUBMED_MIMIC, ]
+
 ########################################################################################
 """
 Hyperparameters used by all models for all experiments. These should not change between experiments
