@@ -19,7 +19,7 @@ def run_experiment_1():
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.FATAL)
     logging.set_verbosity("ERROR")
     # If there is an existing results file, get rid of it
-    final_results_file = os.path.join(RESULTS_DIR_PATH, EXPERIMENT_1_RESULTS, FINAL_RESULTS_FILE)
+    final_results_file = os.path.join(RESULTS_DIR_PATH, EXPERIMENT_1_RESULTS, FINAL_RESULTS_FILE_AMMIT)
     if os.path.isfile(final_results_file):
         os.remove(final_results_file)
     # Set the header of the results file, getting macro & micro precision, recall, and f1s
