@@ -108,20 +108,22 @@ class MultiClass_Token_Classifier(Classifier):
     """
     This constructor creates the model and compiles it for training
     """
-    def __init__(self, language_model_name, num_classes):
+    def __init__(self, language_model_name, num_classes, tokenizer=None):
         Classifier.__init__(self)
         self.language_model_name = language_model_name
         self.num_classes = num_classes
 
         # create the tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+        if tokenizer is None:
+            self.tokenizer = AutoTokenizer.from_pretrained(self.language_model_name)
+        else:
+            self.tokenizer = AutoTokenizer.from_pretrained(tokenizer)
 
         # create the language model
-#        if os.path.isdir(language_model_name):
-#            self.language_model = TFBertModel.from_pretrained(self.language_model_name, from_pt=False, local_files_only=True)
-#        else:
-#            self.language_model = TFAutoModel.from_pretrained(self.language_model_name)
-        self.language_model = TFBertModel.from_pretrained("../models/new_model")
+        if os.path.isdir(language_model_name):
+            self.language_model = TFBertModel.from_pretrained(self.language_model_name, from_pt=True, local_files_only=True)
+        else:
+            self.language_model = TFAutoModel.from_pretrained(self.language_model_name)
 
         self.language_model.trainable = True
 
