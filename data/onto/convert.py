@@ -36,13 +36,16 @@ def find_all_class_types():
 
             for line in lines:
                 line = line.strip()
-                matches = re.findall(r'<ENAMEX TYPE="[\w]+">', line)
+                matches = re.findall(r'<ENAMEX TYPE="[\w]+"(?: S_OFF="[\d]+")?(?: E_OFF="[\d]+")?>', line)
                 for match in matches:
-                    entity_type = match[len_tag:-2]
+                    first_quote = match.find('"') + 1
+                    second_quote = match.find('"', first_quote)
+                    entity_type = match[first_quote: second_quote]
                     class_dict[entity_type] = class_dict.get(entity_type, 0) + 1
 
     print("Class dictionary:")
     print(class_dict, "\n")
+    print("Total number of annotations:", sum([class_dict[key] for key in class_dict]))
         
 
 def convert_onto():
@@ -51,45 +54,70 @@ def convert_onto():
     end_tag = '</ENAMEX>'
     for _, _, ner_files in os.walk(new_directory):
         print("Num files to process:", len(ner_files))
-        for ner_file in ner_files[:1]:
+        for ner_file in ner_files:
+            # print(ner_file)
             with open(os.path.join(new_directory, ner_file), "r+") as f:
                 lines = f.readlines()
 
-            for line in lines[1:2]: 
-                print(line)
+            for line in lines[1:-1]: 
+                # print("Line:", line)
                 line = line.strip()
                 if not line:
                     continue
 
-                annotation = []
-                matches = re.finditer(r'<ENAMEX TYPE="[\w]+">', line)
-                num_removed = 0
-                previous_index = 0
-                for match in matches:
-                    start, end = match.start() - num_removed, match.end() - num_removed
+                try:
+                    annotation = []
+                    matches = re.finditer(r'<ENAMEX TYPE="[\w]+"(?: S_OFF="[\d]+")?(?: E_OFF="[\d]+")?>', line)
+                    num_removed = 0
+                    previous_index = 0
+                    for match in matches:
+                        start, end = match.start() - num_removed, match.end() - num_removed
 
-                    zeros_before = [0] * len(line[previous_index:start].split())
-                    annotation.extend(zeros_before)
+                        zeros_before = [0] * (len(line[previous_index:start].strip().split()))
+                        # print("Line before:", f"'{line[previous_index:start]}'")
+                        # print("Num zeros before:", len(zeros_before))
+                        annotation.extend(zeros_before)
+                        # print("annotation after zeros:", annotation)
 
-                    match_string = line[start: end]
-                    entity_type = match_string[len_tag:-2]
+                        match_string = line[start: end]
+                        first_quote = match_string.find('"') + 1
+                        second_quote = match_string.find('"', first_quote)
+                        entity_type = match_string[first_quote: second_quote]
 
-                    # Need to add this to the annotations
-                    ONTO_CLASS_MAP[entity_type]
+                        # Need to add this to the annotations
+                        class_type = ONTO_CLASS_MAP[entity_type]
 
-                    line = line[:start] + line[end:]
+                        line = line[:start] + line[end:]
 
-                    end_tag_start = line.find(end_tag)
-                    line = line[:end_tag_start] + line[end_tag_start + len(end_tag):]
-                    
-                    previous_index = end_tag_start + len(end_tag)
-                    
-                    num_removed += len(match_string) + len(end_tag)
+                        end_tag_start = line.find(end_tag)
+                        positive_labels = [class_type] * (len(line[start: end_tag_start].split()))
+                        # print("start and end span:", start, end_tag_start)
+                        # print("Between start and end span:", f"'{line[start: end_tag_start]}'")
+                        # print("Num positives:", len(positive_labels))
+                        annotation.extend(positive_labels)
+                        # print("annotation after positive:", annotation)
+                        line = line[:end_tag_start] + line[end_tag_start + len(end_tag):]
+                        
+                        previous_index = end_tag_start
+                        # print("Previous index:", previous_index)
+                        num_removed += len(match_string) + len(end_tag)
+                        # print("Num removed:", num_removed)
+                        # print()
 
-                print(f"{line}\t{annotation}")
+                    zeros_after = [0] * (len(line[previous_index:].strip().split()))
+                    annotation.extend(zeros_after)
+                    # print(f"{line}\t{annotation}")
+                    # print(f"{len(line.split())}\t{len(annotation)}")
+                    if '">' in line or '<"' in line:
+                        raise KeyError()
+                    assert len(line.split()) == len(annotation), f"Error in {ner_file}, Line: {line}"
+                    with open(CONVERTED_DATASET_FILE, 'a+') as of:
+                        of.write(f"{line}\t{annotation}\n")
+                except KeyError:
+                    print(f"KeyError in {ner_file}, Line: {line}")
 
 
 if __name__ == "__main__":
-    collect_all_ner_docs()
+    # collect_all_ner_docs()
     find_all_class_types()
     convert_onto()
