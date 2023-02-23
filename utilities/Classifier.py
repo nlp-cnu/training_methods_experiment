@@ -99,7 +99,7 @@ class Classifier:
         return self.model.evaluate(dg) # , verbose=SILENT)
 
 
-    def save_weights(self, directory_path):
+    def save_language_model(self, directory_path):
         self.language_model.save_pretrained(directory_path)
 
 
