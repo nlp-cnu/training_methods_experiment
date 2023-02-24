@@ -195,5 +195,13 @@ def dataset_test():
             print(f"f1:av={np.mean(pred_macro_f1s)}, std={np.std(pred_macro_f1s)}")
 
 
+def test_exp2():
+    language_model = os.path.join(f"{BLUE_BERT_PUBMED_MIMIC}_ONTO")
+    tokenizer = BLUE_BERT_PUBMED_MIMIC
+    onto_num_classes = 2
+    test_classifier = MultiClass_Token_Classifier(language_model, onto_num_classes, tokenizer=tokenizer)
+
 if __name__ == "__main__":
-    dataset_test()
+    # dataset_test()
+    test_exp2()
+

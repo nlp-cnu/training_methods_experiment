@@ -121,7 +121,11 @@ class MultiClass_Token_Classifier(Classifier):
 
         # create the language model
         if os.path.isdir(language_model_name):
-            self.language_model = TFBertModel.from_pretrained(self.language_model_name, from_pt=True, local_files_only=True)
+            if "ONTO" in language_model_name:
+                self.language_model = TFBertModel.from_pretrained(self.language_model_name, local_files_only=True)
+            else:
+                self.language_model = TFBertModel.from_pretrained(self.language_model_name, from_pt=True, local_files_only=True)
+
         else:
             self.language_model = TFAutoModel.from_pretrained(self.language_model_name)
 

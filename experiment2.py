@@ -27,7 +27,7 @@ def run_experiment_2():
         f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\n")
 
 
-    for dataset_path, language_model in zip(DOMAIN_SPECIFIC_DATASETS, EXP1_WINNING_MODELS):
+    for dataset_path, language_model in zip(DOMAIN_SPECIFIC_DATASETS[:2], EXP1_WINNING_MODELS[:2]):
         dataset_name = dataset_path.split(os.sep)[-1]
         print("Dataset:", dataset_name)
         class_map = DATASET_TO_CLASS_MAP[dataset_name]
@@ -49,20 +49,23 @@ def run_experiment_2():
 
         # Train on onto data and save language model before CV
 
-        persistent_language_model_name  # Tracking to get right tokenizer
+        persistent_language_model = language_model  # Tracking to get right tokenizer
+        onto_class_map = DATASET_TO_CLASS_MAP[ONTO_DATA.split(os.sep)[-1]]
+        onto_num_classes = len(onto_class_map)
+
         onto_file_path = os.path.join(ONTO_DATA, CONVERTED_DATASET_FILE)
-        onto_data = Token_Classification_Dataset(onto_file_path, num_classes, language_model, seed=SEED)
+        onto_data = Token_Classification_Dataset(onto_file_path, onto_num_classes, language_model, seed=SEED)
         onto_train_data = onto_data.data
-        onto_train_labels = onto_labels.labels
+        onto_train_labels = onto_data.labels
         onto_train_data, onto_val_data, onto_train_labels, onto_val_labels = train_test_split(onto_train_data, onto_train_labels, test_size=VALIDATION_SIZE, random_state=SEED)
 
 
-        onto_classifier = MultiClass_Token_Classifier(language_model, num_classes)
+        onto_classifier = MultiClass_Token_Classifier(language_model, onto_num_classes)
         onto_val_csv_log_file = os.path.join(test_results_path, f"ONTO_{language_model_name}_validation.csv")
-        classifier.train(onto_train_data, onto_train_labels, validation_data=(onto_val_data, onto_val_labels), csv_log_file=onto_val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE)
+        onto_classifier.train(onto_train_data, onto_train_labels, validation_data=(onto_val_data, onto_val_labels), csv_log_file=onto_val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE)
         # Saving the mode
         onto_lm_loc = os.path.join("..", "models", f"{language_model_name}_ONTO")
-        classifier.save_language_model(onto_lm_loc)
+        onto_classifier.save_language_model(onto_lm_loc)
 
         for index, train_test in enumerate(folds):
             train_index, test_index = train_test
@@ -73,7 +76,7 @@ def run_experiment_2():
 
             train_data_, val_data, train_labels_, val_labels = train_test_split(train_data, train_labels, test_size=VALIDATION_SIZE, random_state=SEED)
 
-            classifier = MultiClass_Token_Classifier(onto_lm_loc, num_classes, tokenizer=persistent_language_model_name)
+            classifier = MultiClass_Token_Classifier(onto_lm_loc, num_classes, tokenizer=persistent_language_model)
             val_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_validation_{index}.csv")
             validation_metrics = classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels), csv_log_file=val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE)
             validation_history = validation_metrics.history
@@ -81,7 +84,7 @@ def run_experiment_2():
             
             num_epochs = target_metric.index(max(target_metric))
             
-            classifier = MultiClass_Token_Classifier(onto_lm_loc, num_classes, tokenizer=persistent_language_model_name)
+            classifier = MultiClass_Token_Classifier(onto_lm_loc, num_classes, tokenizer=persistent_language_model)
             test_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_test_{index}.csv")
             classifier.train(train_data, train_labels, epochs=num_epochs, csv_log_file=test_csv_log_file)
 
