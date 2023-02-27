@@ -121,7 +121,7 @@ def run_experiment_1():
 
                 if binary_task:
                     target_names = list(class_map)
-                    report_metrics = classification_report(g, p, target_names=target_names, digits=3, output_dict=True)
+                    report_metrics = classification_report(g, p, labels=target_names, digits=3, output_dict=True)
 
                     # collecting the reported metrics
                     # The macro and micro f1 scores are the same for the binary classification task
