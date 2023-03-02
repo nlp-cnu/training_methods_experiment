@@ -27,7 +27,7 @@ def run_experiment_2():
         f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\n")
 
 
-    for dataset_path, language_model in zip(DOMAIN_SPECIFIC_DATASETS[2:], EXP1_WINNING_MODELS[2:]):
+    for dataset_path, language_model in zip(DOMAIN_SPECIFIC_DATASETS[8:], EXP1_WINNING_MODELS[8:]):
         if language_model == "NONE":
             continue
         dataset_name = dataset_path.split(os.sep)[-1]
