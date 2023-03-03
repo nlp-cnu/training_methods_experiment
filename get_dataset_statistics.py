@@ -17,9 +17,12 @@ def get_dataset_statistics():
     except OSError:
         print()
 
+
+
     Path(STATISTICS_DIR).mkdir(parents=True, exist_ok=True)
     for dataset in ALL_DATASETS:
         try:
+            num_pos_samples = 0
             dataset_path = os.path.join(dataset, CONVERTED_DATASET_FILE)
             dataset_name = dataset.split("/")[-1]
 
@@ -36,6 +39,10 @@ def get_dataset_statistics():
             for line in lines:
                 text, annotation = line.split("\t")
                 annotation = literal_eval(annotation) # converting from text to list
+                for a in annotation:
+                    if a > 0:
+                        num_pos_samples += 1
+                        break
                 for key in class_map.values():
                     if key in annotation:
                         sample_dict[key] = sample_dict.get(key, 0) + 1
@@ -81,6 +88,7 @@ def get_dataset_statistics():
                     f.write(f"{annotation_type}\t{num_samples}\t{ratio}\n")
                 f.write("-"*50 + "\n")
 
+            print(f"Dataset={dataset}, num_pos_samples={num_pos_samples}")
 
         except FileNotFoundError:
             print(dataset + " not found")
