@@ -26,13 +26,13 @@ def run_experiment_1():
     with open(final_results_file, "a+") as f:
         f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\n")
 
-    for dataset_path in DOMAIN_SPECIFIC_DATASETS[8:]:
+    for dataset_path in DOMAIN_SPECIFIC_DATASETS[4:5]:
         dataset_name = dataset_path.split(os.sep)[-1]
         print("Dataset:", dataset_name)
         class_map = DATASET_TO_CLASS_MAP[dataset_name]
         num_classes = len(class_map)
         print("Class mapping:", class_map)
-        for language_model in ALL_MODELS[-2:]:
+        for language_model in ALL_MODELS:
             language_model_name = language_model.split(os.sep)[-1]
             print("\tLanguage model:" + language_model_name)
             
@@ -121,7 +121,7 @@ def run_experiment_1():
 
                 if binary_task:
                     target_names = list(class_map)
-                    report_metrics = classification_report(g, p, labels=target_names, digits=3, output_dict=True)
+                    report_metrics = classification_report(g, p, labels=[0,1], digits=3, output_dict=True)
 
                     # collecting the reported metrics
                     # The macro and micro f1 scores are the same for the binary classification task
