@@ -46,7 +46,8 @@ CONVERTED_DATASET_FILE_MINI = "converted_mini.tsv"
 
 EXPERIMENT_1_RESULTS = "experiment_1_results"
 EXPERIMENT_2_RESULTS = "experiment_2_results"
-EXPERIMENT_3_RESULTS = "experiment_3_results"
+EXPERIMENT_3A_RESULTS = "experiment_3A_results"
+EXPERIMENT_3B_RESULTS = "experiment_3B_results"
 
 FINAL_RESULTS_FILE = "final_results.tsv"
 FINAL_RESULTS_FILE_AMMIT = "final_results_ammit_exp1.tsv"
