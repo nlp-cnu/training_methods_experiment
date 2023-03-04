@@ -62,7 +62,7 @@ def run_experiment_3b():
         inter_classifier = MultiClass_Token_Classifier(language_model, num_classes)
         inter_val_csv_log_file = os.path.join(test_results_path, f"INTER_{language_model_name}_validation.csv")
         inter_classifier.train(inter_train_data, inter_train_labels, validation_data=(inter_val_data, inter_val_labels), csv_log_file=inter_val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE)
-        # Saving the mode
+        # Saving the model
         inter_lm_loc = os.path.join("..", "models", f"{language_model_name}_INTER")
         inter_classifier.save_language_model(inter_lm_loc)
 
