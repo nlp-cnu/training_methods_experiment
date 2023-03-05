@@ -26,9 +26,7 @@ def run_experiment_3b():
     with open(final_results_file, "a+") as f:
         f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\n")
 
-    for target_dataset_path, intermediate_dataset_path, language_model in zip(EXP3B_TARGETS, EXP3B_INTER, EXP3B_MODELS):
-        if language_model == "NONE":
-            continue
+    for target_dataset_path, intermediate_dataset_path, language_model in zip(EXP3B_TARGETS[1:], EXP3B_INTER[1:], EXP3B_MODELS[1:]):
         dataset_name = target_dataset_path.split(os.sep)[-1]
         print("Dataset:", dataset_name)
         class_map = DATASET_TO_CLASS_MAP[dataset_name]
