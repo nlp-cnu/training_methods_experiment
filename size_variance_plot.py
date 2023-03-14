@@ -10,6 +10,10 @@ def linear_func(x, m, b):
     return m * x + b
 
 
+def exp_func(x, a, b):
+    return np.exp(a * x) + b
+
+
 def main():
     # THESE NEED TO BE ALPHABETIZED
     # Includes all datasets
@@ -64,6 +68,7 @@ def main():
 
 
     # Linear regression for the sample count by variance
+    sample_size_pos = np.log(sample_size_pos)
     popt, pcov = curve_fit(linear_func, sample_size_pos, variances)
     sample_residuals = variances - linear_func(sample_size_pos, popt[0], popt[1])
     sample_ss_res = np.sum(sample_residuals ** 2)
@@ -71,9 +76,9 @@ def main():
 
     sample_r_squared = 1 - (sample_ss_res / sample_ss_tot)
 
-    print("OPT params:", popt)
-    print("COVs:", pcov)
-    print("R^2:", sample_r_squared)
+    # print("OPT params:", popt)
+    # print("COVs:", pcov)
+    # print("R^2:", sample_r_squared)
 
     fig, ax = plt.subplots(figsize=[12,8])
 
@@ -82,7 +87,8 @@ def main():
     ax.set_title("Variance in micro f1 scores", fontsize=15)
     # ax.set_ylim([0, 0.007])
     ax.scatter(sample_size_pos, variances, linewidth=5)
-    ax.plot(sample_size_pos, [linear_func(val, popt[0], popt[1]) for val in sample_size_pos], label=r"$r^{2}=$" + f"{sample_r_squared:.2f}")
+    # ax.plot(sample_size_pos, [linear_func(val, popt[0], popt[1]) for val in sample_size_pos], label=r"$r^{2}=$" + f"{sample_r_squared:.2f}")
+    ax.plot(sample_size_pos, [linear_func(val, popt[0], popt[1]) for val in sample_size_pos])
 
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, loc='upper right', fontsize=15)
