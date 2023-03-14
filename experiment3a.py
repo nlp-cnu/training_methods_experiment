@@ -24,9 +24,9 @@ def run_experiment_3a():
 
         target_dataset_name = target_dataset_path.split(os.sep)[-1]
         print("Dataset:", target_dataset_name)
-        class_map = DATASET_TO_CLASS_MAP[target_dataset_name]
-        num_classes = len(class_map)
-        print("Class mapping:", class_map)
+        target_class_map = DATASET_TO_CLASS_MAP[target_dataset_name]
+        target_num_classes = len(target_class_map)
+        print("Target class mapping:", target_class_map)
 
         for language_model in EXP1_WINNING_MODELS:
             language_model_name = language_model.split(os.sep)[-1]
@@ -39,39 +39,38 @@ def run_experiment_3a():
             # Intermediate training here
             for intermediate_training_pass in [1, 2, 3]:
                 # If there is an existing results file, get rid of it
-                final_results_file = os.path.join(RESULTS_DIR_PATH, EXPERIMENT_3A_RESULTS, f"final_results_{target_dataset_name}_pass{intermediate_training_pass}")
+                final_results_file = os.path.join(RESULTS_DIR_PATH, EXPERIMENT_3A_RESULTS, f"final_results_{target_dataset_name}_pass{intermediate_training_pass}.tsv")
                 if os.path.isfile(final_results_file):
                     os.remove(final_results_file)
                 # Set the header of the results file, getting macro & micro precision, recall, and f1s
                 with open(final_results_file, "a+") as f:
                     f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\n")
                     
-                for intermediate_dataset in intermediate_training_datasets:
-                    inter_dataset_name = intermediate_dataset.split(os.sep)[-1]
-                    print("Inter_dataset:", inter_dataset_name)
-                    class_map = DATASET_TO_CLASS_MAP[inter_dataset_name]
-                    num_classes = len(class_map)
-                    print("Inter_class_mapping:", class_map)
 
-                    persistent_language_model = language_model  # Tracking to get right tokenizer
-                    inter_class_map = DATASET_TO_CLASS_MAP[intermediate_dataset_name]
-                    inter_num_classes = len(inter_class_map)
+                persistent_language_model = language_model  # Tracking to get right tokenizer
+                inter_lm_loc = os.path.join("..", "models", f"{language_model_name}_INTER_TARGET_{target_dataset_name}_PASS{intermediate_training_pass}")
+                if not os.path.exists(inter_lm_loc):
+                    for intermediate_dataset in intermediate_training_datasets:
+                        inter_dataset_name = intermediate_dataset.split(os.sep)[-1]
+                        print("Inter_dataset:", inter_dataset_name)
+                        inter_class_map = DATASET_TO_CLASS_MAP[inter_dataset_name]
+                        inter_num_classes = len(inter_class_map)
+                        print("Inter_class_mapping:", inter_class_map)
 
-                    inter_file_path = os.path.join(intermediate_dataset, CONVERTED_DATASET_FILE)
-                    inter_data = Token_Classification_Dataset(inter_file_path, inter_num_classes, language_model, seed=SEED)
-                    inter_train_data = inter_data.data
-                    inter_train_labels = inter_data.labels
-                    inter_train_data, inter_val_data, inter_train_labels, inter_val_labels = train_test_split(inter_train_data, inter_train_labels, test_size=VALIDATION_SIZE, random_state=SEED)
+                        inter_file_path = os.path.join(intermediate_dataset, CONVERTED_DATASET_FILE)
+                        inter_data = Token_Classification_Dataset(inter_file_path, inter_num_classes, language_model, seed=SEED)
+                        inter_train_data = inter_data.data
+                        inter_train_labels = inter_data.labels
+                        inter_train_data, inter_val_data, inter_train_labels, inter_val_labels = train_test_split(inter_train_data, inter_train_labels, test_size=VALIDATION_SIZE, random_state=SEED)
 
-                    inter_classifier = MultiClass_Token_Classifier(language_model, inter_num_classes)
-                    inter_val_csv_log_file = os.path.join(test_results_path, f"INTER_{language_model_name}_{target_dataset_name}_{intermediate_dataset_name}_pass{intermediate_training_pass}_validation.csv")
-                    inter_classifier.train(inter_train_data, inter_train_labels, validation_data=(inter_val_data, inter_val_labels), csv_log_file=inter_val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE)
-                    # Saving the mode
-                    inter_lm_loc = os.path.join("..", "models", f"{language_model_name}_INTER_TARGET_{target_dataset_name}_PASS{intermediate_training_pass}")
-                    inter_classifier.save_language_model(inter_lm_loc)
+                        inter_classifier = MultiClass_Token_Classifier(language_model, inter_num_classes)
+                        inter_val_csv_log_file = os.path.join(test_results_path, f"INTER_{language_model_name}_{target_dataset_name}_{inter_dataset_name}_pass{intermediate_training_pass}_validation.csv")
+                        inter_classifier.train(inter_train_data, inter_train_labels, validation_data=(inter_val_data, inter_val_labels), csv_log_file=inter_val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE)
+                        # Saving the mode
+                        inter_classifier.save_language_model(inter_lm_loc)
 
 
-                data = Token_Classification_Dataset(training_file_path, num_classes, language_model, seed=SEED)
+                data = Token_Classification_Dataset(training_file_path, target_num_classes, language_model, seed=SEED)
                 folds = list(data.get_folds(NUM_FOLDS))
 
                 predictions = []
@@ -86,7 +85,7 @@ def run_experiment_3a():
 
                     train_data_, val_data, train_labels_, val_labels = train_test_split(train_data, train_labels, test_size=VALIDATION_SIZE, random_state=3)
 
-                    classifier = MultiClass_Token_Classifier(inter_lm_loc, num_classes, tokenizer=persistent_language_model)
+                    classifier = MultiClass_Token_Classifier(inter_lm_loc, target_num_classes, tokenizer=persistent_language_model)
                     val_csv_log_file = os.path.join(test_results_path, f"{target_dataset_name}_{language_model_name}_validation_{index}_pass{intermediate_training_pass}.csv")
                     validation_metrics = classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels), csv_log_file=val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE)
                     validation_history = validation_metrics.history
@@ -94,7 +93,7 @@ def run_experiment_3a():
                     
                     num_epochs = target_metric.index(max(target_metric))
                     
-                    classifier = MultiClass_Token_Classifier(inter_lm_loc, num_classes, tokenizer=persistent_language_model)
+                    classifier = MultiClass_Token_Classifier(inter_lm_loc, target_num_classes, tokenizer=persistent_language_model)
                     test_csv_log_file = os.path.join(test_results_path, f"{target_dataset_name}_{language_model_name}_test_{index}.csv")
                     classifier.train(train_data, train_labels, epochs=num_epochs, csv_log_file=test_csv_log_file)
 
@@ -144,14 +143,14 @@ def run_experiment_3a():
                     p = np.array(pred_final)
                     g = np.array(gt_final)
 
-                    p = p.reshape((-1, num_classes))[:, 1:]
-                    g = g.reshape((-1, num_classes))[:, 1:]
+                    p = p.reshape((-1, target_num_classes))[:, 1:]
+                    g = g.reshape((-1, target_num_classes))[:, 1:]
 
                     # Calculating the metrics w/ sklearn
-                    binary_task = len(class_map) == 2
+                    binary_task = len(target_class_map) == 2
 
                     if binary_task:
-                        target_names = list(class_map)
+                        target_names = list(target_class_map)
                         report_metrics = classification_report(g, p, target_names=target_names, digits=3, output_dict=True)
 
                         # collecting the reported metrics
@@ -174,7 +173,7 @@ def run_experiment_3a():
 
 
                     else:
-                        target_names = list(class_map)[1:]
+                        target_names = list(target_class_map)[1:]
                         report_metrics = classification_report(g, p, target_names=target_names, digits=3, output_dict=True)
 
                         # collecting the reported metrics
