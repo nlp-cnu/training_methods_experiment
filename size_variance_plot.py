@@ -10,14 +10,14 @@ def linear_func(x, m, b):
     return m * x + b
 
 
-def exp_func(x, a, b):
-    return np.exp(a * x) + b
+def exp_func(x, a, b, c):
+    return np.exp(b * x) + c
 
 
 def main():
     # THESE NEED TO BE ALPHABETIZED
     # Includes all datasets
-    # dataset_word_size = [291345, 922104, 1481246, 271175, 463200, 364446, 904414, 146791, 729228]
+    dataset_word_size = [291345, 922104, 1481246, 271175, 463200, 364446, 904414, 146791, 729228]
     # dataset_sample_size = [18300, 42575, 127125, 13880, 19988, 43940, 12809, 7153, 33842]
     
     # Excludes BC7MED, class imbalanced twitter dataset
@@ -40,55 +40,57 @@ def main():
     variances = var_by_dataset['micro_f1_av'].tolist()
 
     # Linear regression for the word count by variance
-#     popt, pcov = curve_fit(linear_func, dataset_word_size, variances)
-#     word_residuals = variances - linear_func(dataset_word_size, popt[0], popt[1])
-#     word_ss_res = np.sum(word_residuals ** 2)
-#     word_ss_tot = np.sum((variances - np.mean(variances))**2)
-# 
-#     word_r_squared = 1 - (word_ss_res / word_ss_tot)
-# 
-#     print("OPT params:", popt)
-#     print("COVs:", pcov)
-#     print("R^2:", word_r_squared)
-#     print("-" * 50)
-# 
-#     fig, ax = plt.subplots(figsize=[12,8])
-# 
-#     ax.set_title("Dataset word count by variance", fontsize=20)
-#     ax.set_xlabel("Number of words in dataset", fontsize=15)
-#     ax.set_title("Variance in micro f1 scores", fontsize=15)
-#     ax.scatter(dataset_word_size, variances, linewidth=5)
-#     ax.plot(dataset_word_size, [linear_func(val, popt[0], popt[1]) for val in dataset_word_size], label=r"$r^{2}=$" + f"{word_r_squared:.4f}") 
-# 
-#     handles, labels = ax.get_legend_handles_labels()
-#     ax.legend(handles, labels, loc='upper right', fontsize=15)
-# 
-#     plt.tight_layout()
-#     plt.savefig("results/dataset/word_count_variance.pdf", dpi=400)
+    popt, pcov = curve_fit(linear_func, np.log(dataset_word_size), variances)
+    word_residuals = variances - linear_func(np.log(dataset_word_size), popt[0], popt[1])
+    word_ss_res = np.sum(word_residuals ** 2)
+    word_ss_tot = np.sum((variances - np.mean(variances))**2)
+
+    word_r_squared = 1 - (word_ss_res / word_ss_tot)
+
+    print("OPT params:", popt)
+    print("COVs:", pcov)
+    print("R^2:", word_r_squared)
+    print("-" * 50)
+
+    fig, ax = plt.subplots(figsize=[12,8])
+
+    ax.set_title("Dataset word count by variance", fontsize=20)
+    ax.set_xlabel("Number of words in dataset", fontsize=15)
+    ax.set_title("Variance in micro f1 scores", fontsize=15)
+    ax.scatter(dataset_word_size, variances, linewidth=5)
+    ax.plot(dataset_word_size, [linear_func(val, popt[0], popt[1]) for val in np.log(dataset_word_size)], label=r"$r^{2}=$" + f"{word_r_squared:.4f}")
+    ax.set_xscale('log')
+
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, loc='upper right', fontsize=15)
+
+    plt.tight_layout()
+    plt.savefig("results/dataset/word_count_variance.pdf", dpi=400)
 
 
     # Linear regression for the sample count by variance
-    sample_size_pos = np.log(sample_size_pos)
-    popt, pcov = curve_fit(linear_func, sample_size_pos, variances)
-    sample_residuals = variances - linear_func(sample_size_pos, popt[0], popt[1])
+    # sample_size_pos = np.log(sample_size_pos)
+    popt, pcov = curve_fit(linear_func, np.log(sample_size_pos), variances)
+    sample_residuals = variances - linear_func(np.log(sample_size_pos), popt[0], popt[1])
     sample_ss_res = np.sum(sample_residuals ** 2)
     sample_ss_tot = np.sum((variances - np.mean(variances))**2)
 
     sample_r_squared = 1 - (sample_ss_res / sample_ss_tot)
 
-    # print("OPT params:", popt)
-    # print("COVs:", pcov)
-    # print("R^2:", sample_r_squared)
+    print("OPT params:", popt)
+    print("COVs:", pcov)
+    print("R^2:", sample_r_squared)
 
     fig, ax = plt.subplots(figsize=[12,8])
 
-    ax.set_title("Dataset sample count by variance", fontsize=20)
-    ax.set_xlabel("Number of positive samples in dataset", fontsize=15)
-    ax.set_title("Variance in micro f1 scores", fontsize=15)
+    ax.set_xlabel("Log of number of positive samples in dataset", fontsize=15)
+    ax.set_ylabel("F1 variance", fontsize=15)
+    ax.set_title("Variance in micro f1 scores per positive sample size", fontsize=20)
     # ax.set_ylim([0, 0.007])
+    ax.set_xscale('log')
     ax.scatter(sample_size_pos, variances, linewidth=5)
-    # ax.plot(sample_size_pos, [linear_func(val, popt[0], popt[1]) for val in sample_size_pos], label=r"$r^{2}=$" + f"{sample_r_squared:.2f}")
-    ax.plot(sample_size_pos, [linear_func(val, popt[0], popt[1]) for val in sample_size_pos])
+    ax.plot(sample_size_pos, [linear_func(val, popt[0], popt[1]) for val in np.log(sample_size_pos)], label=r"$r^{2}=$" + f"{sample_r_squared:.2f}")
+    # ax.plot(sample_size_pos, [linear_func(val, popt[0], popt[1]) for val in sample_size_pos])
 
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, loc='upper right', fontsize=15)
@@ -104,8 +106,8 @@ def main():
     # THESE ARE ALPHABETIZED
     means = mean_by_dataset['micro_f1_av'].tolist()
 
-    popt, pcov = curve_fit(linear_func, sample_size_pos, means)
-    sample_residuals = means - linear_func(sample_size_pos, popt[0], popt[1])
+    popt, pcov = curve_fit(linear_func, np.log(sample_size_pos), means)
+    sample_residuals = means - linear_func(np.log(sample_size_pos), popt[0], popt[1])
     sample_ss_res = np.sum(sample_residuals ** 2)
     sample_ss_tot = np.sum((means - np.mean(means))**2)
 
@@ -117,14 +119,15 @@ def main():
 
     fig, ax = plt.subplots(figsize=[12,8])
 
-    ax.set_title("Dataset sample count by mean", fontsize=20)
-    ax.set_xlabel("Number of positive samples in dataset", fontsize=15)
-    ax.set_title("Mean of micro f1 scores", fontsize=15)
+    ax.set_xlabel("Log of number of positive samples in dataset", fontsize=15)
+    ax.set_ylabel("F1 mean", fontsize=15)
+    ax.set_title("Mean micro f1 score vs positive sample size", fontsize=20)
     ax.scatter(sample_size_pos, means, linewidth=5)
-    ax.plot(sample_size_pos, [linear_func(val, popt[0], popt[1]) for val in sample_size_pos], label=r"$r^{2}=$" + f"{mean_r_squared:.2f}")
+    ax.plot(sample_size_pos, [linear_func(val, popt[0], popt[1]) for val in np.log(sample_size_pos)], label=r"$r^{2}=$" + f"{mean_r_squared:.2f}")
 
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, loc='upper right', fontsize=15)
+    ax.set_xscale('log')
     plt.tight_layout()
     plt.savefig("results/dataset/pos_sample_count_mean.pdf", dpi=400)
 

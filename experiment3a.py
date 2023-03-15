@@ -1,5 +1,6 @@
 import gc
 import os
+import random
 import re
 import sys
 from pathlib import Path
@@ -50,6 +51,7 @@ def run_experiment_3a():
                 persistent_language_model = language_model  # Tracking to get right tokenizer
                 inter_lm_loc = os.path.join("..", "models", f"{language_model_name}_INTER_TARGET_{target_dataset_name}_PASS{intermediate_training_pass}")
                 if not os.path.exists(inter_lm_loc):
+                    random.shuffle(intermediate_training_datasets)
                     for intermediate_dataset in intermediate_training_datasets:
                         inter_dataset_name = intermediate_dataset.split(os.sep)[-1]
                         print("Inter_dataset:", inter_dataset_name)
