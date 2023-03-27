@@ -20,7 +20,7 @@ def run_experiment_3a():
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.FATAL)
     logging.set_verbosity("ERROR")
 
-    for target_index, ds_lm_pair in enumerate(zip(DOMAIN_SPECIFIC_DATASETS, EXP1_WINNING_MODELS)):
+    for target_index, ds_lm_pair in enumerate(zip(DOMAIN_SPECIFIC_DATASETS[5:], EXP1_WINNING_MODELS[5:])):
         target_dataset_path, language_model = ds_lm_pair
         language_model_name = language_model.split(os.sep)[-1]
         print("\tLanguage model:" + language_model_name)
