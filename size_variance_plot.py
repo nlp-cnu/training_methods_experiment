@@ -16,6 +16,7 @@ def exp_func(x, a, b, c):
 
 def main():
     # THESE NEED TO BE ALPHABETIZED
+    # ademiner, bc7dcpi, bc7med, cdr, cometa, i2c2, n2c2, ncbi, nlmchem
     # Includes all datasets
     dataset_word_size = [291345, 922104, 1481246, 271175, 463200, 364446, 904414, 146791, 729228]
     # dataset_sample_size = [18300, 42575, 127125, 13880, 19988, 43940, 12809, 7153, 33842]

@@ -36,6 +36,7 @@ def get_dataset_statistics():
             with open(dataset_path, "r+") as f:
                 lines = f.readlines()
             
+            num_dataset_samples = len(lines)
             for line in lines:
                 text, annotation = line.split("\t")
                 annotation = literal_eval(annotation) # converting from text to list
@@ -88,7 +89,7 @@ def get_dataset_statistics():
                     f.write(f"{annotation_type}\t{num_samples}\t{ratio}\n")
                 f.write("-"*50 + "\n")
 
-            print(f"Dataset={dataset}, num_pos_samples={num_pos_samples}")
+            print(f"Dataset={dataset}, num_samples={num_dataset_samples}, num_pos_samples={num_pos_samples}, percent={num_pos_samples/num_dataset_samples}")
 
         except FileNotFoundError:
             print(dataset + " not found")
