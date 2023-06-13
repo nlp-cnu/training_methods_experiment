@@ -26,6 +26,17 @@ def run_experiment_3b():
     with open(final_results_file, "a+") as f:
         f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\n")
 
+        for i in range(1,NUM_FOLDS+1):
+            f.write("fold " + str(i) + " micro precision\t")
+            f.write("fold " + str(i) + " micro recall\t")
+            f.write("fold " + str(i) + " micro f1\t")
+
+            f.write("fold " + str(i) + " macro precision\t")
+            f.write("fold " + str(i) + " macro recall\t")
+            f.write("fold " + str(i) + " macro f1\t")
+        f.write("\n")
+
+    # iterate over each target dataset (the primary evaluation dataset)
     for target_dataset_path, intermediate_dataset_path, language_model in zip(EXP3B_TARGETS, EXP3B_INTER, EXP3B_MODELS):
         dataset_name = target_dataset_path.split(os.sep)[-1]
         print("Dataset:", dataset_name)
@@ -35,64 +46,91 @@ def run_experiment_3b():
 
         language_model_name = language_model.split(os.sep)[-1]
         print("\tLanguage model:" + language_model_name)
-        
+
+        # load the dataset and split into folds
         training_file_path = os.path.join(target_dataset_path, CONVERTED_DATASET_FILE)
         test_results_path = os.path.join(RESULTS_DIR_PATH, EXPERIMENT_3B_RESULTS)
         Path(test_results_path).mkdir(parents=True, exist_ok=True)
-
         data = Token_Classification_Dataset(training_file_path, num_classes, language_model, seed=SEED)
         folds = list(data.get_folds(NUM_FOLDS))
 
         predictions = []
         golds = []
 
-
         # Train on domain-relevant data and save language model before CV
         # Aka intermediate NER training
         persistent_language_model = language_model  # Tracking to get right tokenizer
 
+        # load the intermediate dataset
         intermediate_training_path = os.path.join(intermediate_dataset_path, CONVERTED_DATASET_FILE)
         inter_data = Token_Classification_Dataset(intermediate_training_path, num_classes, language_model, seed=SEED)
         inter_train_data = inter_data.data
         inter_train_labels = inter_data.labels
         inter_train_data, inter_val_data, inter_train_labels, inter_val_labels = train_test_split(inter_train_data, inter_train_labels, test_size=VALIDATION_SIZE, random_state=SEED)
 
+        # create and train the intermediate classifier
         inter_classifier = MultiClass_Token_Classifier(language_model, num_classes)
+        if PARTIAL_UNFREEZING:
+            print("Training the inter-Decoder only")
+            # train the decoder
+            inter_classifier.language_model.trainable = False
+            inter_val_csv_log_file = os.path.join(test_results_path, f"INTER_{language_model_name}_validation_decoder.csv")
+            inter_classifier.train(inter_train_data, inter_train_labels,
+                                   validation_data=(inter_val_data, inter_val_labels),
+                                   csv_log_file=inter_val_csv_log_file,
+                                   early_stop_patience=EARLY_STOPPING_PATIENCE,
+                                   restore_best_weights=True)
+
+        inter_classifier.language_model.trainable = True
         inter_val_csv_log_file = os.path.join(test_results_path, f"INTER_{language_model_name}_validation.csv")
-        inter_classifier.train(inter_train_data, inter_train_labels, validation_data=(inter_val_data, inter_val_labels), csv_log_file=inter_val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE)
-        # Saving the model
+        inter_classifier.train(inter_train_data, inter_train_labels, validation_data=(inter_val_data, inter_val_labels),
+                               csv_log_file=inter_val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE,
+                               restore_best_weights=True)
+
+        # save the model
         inter_lm_loc = os.path.join("..", "models", f"{language_model_name}_INTER")
         inter_classifier.save_language_model(inter_lm_loc)
 
+        # perform cross validation
         for index, train_test in enumerate(folds):
+            # split the data into train, validation, test sets
             train_index, test_index = train_test
             train_data = np.array(data.data)[train_index]
             train_labels = np.array(data.labels)[train_index]
             test_data = np.array(data.data)[test_index]
             test_labels = np.array(data.labels)[test_index]
+            train_data_, val_data, train_labels_, val_labels = train_test_split(train_data, train_labels,
+                                                                                test_size=VALIDATION_SIZE, random_state=SEED)
 
-            train_data_, val_data, train_labels_, val_labels = train_test_split(train_data, train_labels, test_size=VALIDATION_SIZE, random_state=SEED)
-
+            # create and train the classifier
             classifier = MultiClass_Token_Classifier(inter_lm_loc, num_classes, tokenizer=persistent_language_model)
+            if PARTIAL_UNFREEZING:
+                print("Training the Decoder only")
+                # train the decoder
+                classifier.language_model.trainable = False
+                val_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_validation_decoder_{index}.csv")
+                classifier.train(inter_train_data, inter_train_labels,
+                                       validation_data=(inter_val_data, inter_val_labels),
+                                       csv_log_file=inter_val_csv_log_file,
+                                       early_stop_patience=EARLY_STOPPING_PATIENCE,
+                                       restore_best_weights=True)
+
+            # train the full network
+            classifier.language_model.trainable = True
             val_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_validation_{index}.csv")
-            validation_metrics = classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels), csv_log_file=val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE)
-            validation_history = validation_metrics.history
-            target_metric = validation_history['val_micro_f1']
-            
-            num_epochs = target_metric.index(max(target_metric))
-            
-            classifier = MultiClass_Token_Classifier(inter_lm_loc, num_classes, tokenizer=persistent_language_model)
-            test_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_test_{index}.csv")
-            classifier.train(train_data, train_labels, epochs=num_epochs, csv_log_file=test_csv_log_file)
+            classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels), csv_log_file=val_csv_log_file,
+                             early_stop_patience=EARLY_STOPPING_PATIENCE, restore_best_weights=True)
 
-
+            # get the test set predictions
             predictions.append(classifier.predict(test_data))
             golds.append(test_labels)
-            
+
+            # I think there are some memory leaks within keras, so do some garbage collecting
             K.clear_session()
             gc.collect()
             del classifier
 
+        ## collect statistics from cross-validation
         pred_micro_precisions = []
         pred_macro_precisions = []
         pred_micro_recalls = []
@@ -159,7 +197,6 @@ def run_experiment_3b():
                 macro_f1 = macro_averaged_stats["f1-score"]
                 pred_macro_f1s.append(macro_f1)
 
-
             else:
                 target_names = list(class_map)[1:]
                 report_metrics = classification_report(g, p, target_names=target_names, digits=3, output_dict=True)
@@ -198,8 +235,18 @@ def run_experiment_3b():
         macro_f1_std = np.std(pred_macro_f1s)
 
         with open(final_results_file, "a+") as f:
-            f.write(f"{dataset_name}\t{language_model_name}\t{micro_precision_av}\t{micro_precision_std}\t{micro_recall_av}\t{micro_recall_std}\t{micro_f1_av}\t{micro_f1_std}\t{macro_precision_av}\t{macro_precision_std}\t{macro_recall_av}\t{macro_recall_std}\t{macro_f1_av}\t{macro_f1_std}\n")
+            f.write(f"{dataset_name}\t{language_model_name}\t{micro_precision_av}\t{micro_precision_std}\t{micro_recall_av}\t{micro_recall_std}\t{micro_f1_av}\t{micro_f1_std}\t{macro_precision_av}\t{macro_precision_std}\t{macro_recall_av}\t{macro_recall_std}\t{macro_f1_av}\t{macro_f1_std}\t")
 
+            # also write the stats per fold (so statistical significance can be computed
+            f.write('\t'.join(str(num) for num in pred_micro_precisions) + "\t")
+            f.write('\t'.join(str(num) for num in pred_micro_recalls) + "\t")
+            f.write('\t'.join(str(num) for num in pred_micro_f1s) + "\t")
+
+            f.write('\t'.join(str(num) for num in pred_macro_precisions) + "\t")
+            f.write('\t'.join(str(num) for num in pred_macro_recalls) + "\t")
+            f.write('\t'.join(str(num) for num in pred_macro_f1s))
+
+            f.write("\n")
             
 
 if __name__ == "__main__":
