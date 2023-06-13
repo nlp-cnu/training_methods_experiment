@@ -257,16 +257,16 @@ def run_experiment_3a():
             with open(final_results_file, "a+") as f:
                 f.write(f"{target_dataset_name}\t{language_model_name}\t{micro_precision_av}\t{micro_precision_std}\t{micro_recall_av}\t{micro_recall_std}\t{micro_f1_av}\t{micro_f1_std}\t{macro_precision_av}\t{macro_precision_std}\t{macro_recall_av}\t{macro_recall_std}\t{macro_f1_av}\t{macro_f1_std}\t")
 
-            # also write the stats per fold (so statistical significance can be computed
-            f.write('\t'.join(str(num) for num in pred_micro_precisions) + "\t")
-            f.write('\t'.join(str(num) for num in pred_micro_recalls) + "\t")
-            f.write('\t'.join(str(num) for num in pred_micro_f1s) + "\t")
+                # also write the stats per fold (so statistical significance can be computed
+                f.write('\t'.join(str(num) for num in pred_micro_precisions) + "\t")
+                f.write('\t'.join(str(num) for num in pred_micro_recalls) + "\t")
+                f.write('\t'.join(str(num) for num in pred_micro_f1s) + "\t")
 
-            f.write('\t'.join(str(num) for num in pred_macro_precisions) + "\t")
-            f.write('\t'.join(str(num) for num in pred_macro_recalls) + "\t")
-            f.write('\t'.join(str(num) for num in pred_macro_f1s))
+                f.write('\t'.join(str(num) for num in pred_macro_precisions) + "\t")
+                f.write('\t'.join(str(num) for num in pred_macro_recalls) + "\t")
+                f.write('\t'.join(str(num) for num in pred_macro_f1s))
 
-            f.write("\n")
+                f.write("\n")
             
 
 if __name__ == "__main__":
