@@ -7,25 +7,25 @@ This is a file that contains all of the constants used in my thesis experiments
 """
 These are all the dataset paths needed in these experiments
 """
-ONTO_DATA = os.path.join("data", "onto", "converted_data")
+ONTO_DATA = os.path.join("data", "onto")
 
-I2B2_DATA = os.path.join("data", "i2b2", "converted_data")
+I2B2_DATA = os.path.join("data", "i2b2")
 
-N2C2_DATA = os.path.join("data", "n2c2", "converted_data")
+N2C2_DATA = os.path.join("data", "n2c2")
 
-BC5CDR_DATA = os.path.join("data", "cdr", "converted_data")
+BC5CDR_DATA = os.path.join("data", "cdr")
 
-DCPI_DATA = os.path.join("data", "bc7dcpi", "converted_data")
+DCPI_DATA = os.path.join("data", "bc7dcpi")
 
-NLMCHEM_DATA = os.path.join("data", "nlmchem", "converted_data")
+NLMCHEM_DATA = os.path.join("data", "nlmchem")
 
-NCBI_DATA = os.path.join("data", "ncbi", "converted_data")
+NCBI_DATA = os.path.join("data", "ncbi")
 
-BC7MED_DATA = os.path.join("data", "bc7med", "converted_data")
+BC7MED_DATA = os.path.join("data", "bc7med")
 
-COMETA_DATA = os.path.join("data", "cometa", "converted_data")
+COMETA_DATA = os.path.join("data", "cometa")
 
-ADEMINER_DATA = os.path.join("data", "ademiner", "converted_data")
+ADEMINER_DATA = os.path.join("data", "ademiner")
 
 #ALL_DATASETS = [ONTO_DATA, I2B2_DATA, N2C2_DATA, BC5CDR_DATA, DCPI_DATA, NLMCHEM_DATA, NCBI_DATA, BC7MED_DATA, COMETA_DATA, ADEMINER_DATA]
 ALL_DATASETS = [ONTO_DATA, ADEMINER_DATA, BC7MED_DATA]
@@ -139,6 +139,7 @@ MAX_EPOCHS = 50
 MAX_NUM_TOKENS = 512
 CATEGORICAL_CROSSENTROPY = "categorical_crossentropy"
 SILENT = 0
+PARTIAL_UNFREEZING = False
 
 SEED = 3
 NUM_FOLDS = 5

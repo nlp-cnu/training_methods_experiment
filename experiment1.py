@@ -70,20 +70,33 @@ def run_experiment_1():
                 test_labels = np.array(data.labels)[test_index]
                 train_data_, val_data, train_labels_, val_labels = train_test_split(train_data, train_labels, test_size=VALIDATION_SIZE, random_state=3)
 
-                # create and train the classifier
+                # create and train the classifier with or without partial unfreezing
                 classifier = MultiClass_Token_Classifier(language_model, num_classes)
-                val_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_validation_{index}.csv")
-                validation_metrics = classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels),
-                                                      csv_log_file=val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE,
-                                                      restore_best_weights=True)
+                if PARTIAL_UNFREEZING:
+                    print ("Partial Unfreezing")
+                    # train the decoder
+                    val_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_validation_decoder_{index}.csv")
+                    classifier.language_model.trainable = False
+                    validation_metrics = classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels),
+                                                          csv_log_file=val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE,
+                                                          restore_best_weights=True)
 
-                #validation_history = validation_metrics.history
-                #target_metric = validation_history['val_micro_f1']
-                #num_epochs = target_metric.index(max(target_metric))
-                #classifier = MultiClass_Token_Classifier(language_model, num_classes)
-                #test_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_test_{index}.csv")
-                #classifier.train(train_data, train_labels, epochs=num_epochs, csv_log_file=test_csv_log_file)
+                    # train the whole network
+                    val_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_validation_{index}.csv")
+                    classifier.language_model.trainable = True
+                    validation_metrics = classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels),
+                                                          csv_log_file=val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE,
+                                                          restore_best_weights=True)
 
+                else:
+                    print ("No Partial Freezing")
+                    # create and train the classifier
+                    classifier.language_model.trainable = True
+                    val_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_validation_{index}.csv")
+                    validation_metrics = classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels),
+                                                          csv_log_file=val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE,
+                                                          restore_best_weights=True)
+                    
                 # get the test set predictions
                 predictions.append(classifier.predict(test_data))
                 golds.append(test_labels)
@@ -203,19 +216,18 @@ def run_experiment_1():
             with open(final_results_file, "a+") as f:
                 f.write(f"{dataset_name}\t{language_model_name}\t{micro_precision_av}\t{micro_precision_std}\t{micro_recall_av}\t{micro_recall_std}\t{micro_f1_av}\t{micro_f1_std}\t{macro_precision_av}\t{macro_precision_std}\t{macro_recall_av}\t{macro_recall_std}\t{macro_f1_av}\t{macro_f1_std}\t")
 
-            # also write the stats per fold (so statistical significance can be computed
-            f.write(pred_micro_precisions.join("\t")+"\t")
-            f.write(pred_micro_recalls.join("\t") + "\t")
-            f.write(pred_micro_f1s.join("\t") + "\t")
+            # also write the stats per fold (so statistical significance can be computed    
+            f.write('\t'.join(str(num) for num in pred_micro_precisions) + "\t")
+            f.write('\t'.join(str(num) for num in pred_micro_recalls) + "\t")
+            f.write('\t'.join(str(num) for num in pred_micro_f1s) + "\t")
 
-            f.write(pred_macro_precisions.join("\t") + "\t")
-            f.write(pred_macro_recalls.join("\t") + "\t")
-            f.write(pred_macro_f1s.join("\t") + "\t")
+            f.write('\t'.join(str(num) for num in pred_macro_precisions) + "\t")
+            f.write('\t'.join(str(num) for num in pred_macro_recalls) + "\t")
+            f.write('\t'.join(str(num) for num in pred_macro_f1s))
 
             f.write("\n")
 
-            
-
+        
 if __name__ == "__main__":
     run_experiment_1()
 
