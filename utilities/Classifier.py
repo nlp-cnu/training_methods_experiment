@@ -39,7 +39,7 @@ class Classifier:
         self.language_model = None
 
 
-    def train(self, x, y, batch_size=BATCH_SIZE, validation_data=None, epochs=MAX_EPOCHS, csv_log_file=None, early_stop_patience=None):
+    def train(self, x, y, batch_size=BATCH_SIZE, validation_data=None, epochs=MAX_EPOCHS, csv_log_file=None, early_stop_patience=None, restore_best_weights=True):
         """
         Trains the classifier
         :param x: the training data
@@ -60,7 +60,7 @@ class Classifier:
             callbacks.append(csv_logger)
 
         if early_stop_patience:
-            early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_micro_f1', patience=early_stop_patience, mode='max') # , restore_best_weights) <== auto tracks model weights with best scores
+            early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_micro_f1', patience=early_stop_patience, mode='max', restore_best_weights=restore_best_weights) # , restore_best_weights) <== auto tracks model weights with best scores
             callbacks.append(early_stop)
 
         return self.model.fit(
