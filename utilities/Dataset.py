@@ -99,6 +99,6 @@ class Token_Classification_Dataset(Dataset):
         return df
 
     def get_folds(self, k):
-        kf = KFold(n_splits=k)
-        return kf.split(self.df, shuffle=True, random_state=self.seed)
+        kf = KFold(n_splits=k, random_state=self.seed, shuffle=True)
+        return kf.split(self.df)
 
