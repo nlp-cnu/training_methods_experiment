@@ -75,7 +75,7 @@ def run_experiment_2():
         onto_train_data = onto_data.data
         onto_train_labels = onto_data.labels
         onto_train_data, onto_val_data, onto_train_labels, onto_val_labels = train_test_split(onto_train_data, onto_train_labels,
-                                                                                              test_size=VALIDATION_SIZE, random_state=SEED)
+                                                                                              test_size=VALIDATION_SIZE, random_state=SEED, shuffle=True)
 
         # Train the classifier with onto data
         onto_classifier = MultiClass_Token_Classifier(language_model, onto_num_classes)
@@ -109,7 +109,7 @@ def run_experiment_2():
             test_labels = np.array(data.labels)[test_index]
 
             train_data_, val_data, train_labels_, val_labels = train_test_split(train_data, train_labels,
-                                                                                test_size=VALIDATION_SIZE, random_state=SEED)
+                                                                                test_size=VALIDATION_SIZE, random_state=SEED, shuffle=True)
 
             # create and train the classifier with or without partial unfreezing
             classifier = MultiClass_Token_Classifier(onto_lm_loc, num_classes, tokenizer=persistent_language_model)

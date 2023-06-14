@@ -78,7 +78,7 @@ def run_experiment_3a():
                     inter_data = Token_Classification_Dataset(inter_file_path, inter_num_classes, language_model, seed=SEED)
                     inter_train_data = inter_data.data
                     inter_train_labels = inter_data.labels
-                    inter_train_data, inter_val_data, inter_train_labels, inter_val_labels = train_test_split(inter_train_data, inter_train_labels, test_size=VALIDATION_SIZE, random_state=SEED)
+                    inter_train_data, inter_val_data, inter_train_labels, inter_val_labels = train_test_split(inter_train_data, inter_train_labels, test_size=VALIDATION_SIZE, random_state=SEED, shuffle=True)
 
                     # Train the classifier
                     inter_classifier = MultiClass_Token_Classifier(language_model, inter_num_classes)
@@ -122,7 +122,7 @@ def run_experiment_3a():
                 train_labels = np.array(data.labels)[train_index]
                 test_data = np.array(data.data)[test_index]
                 test_labels = np.array(data.labels)[test_index]
-                train_data_, val_data, train_labels_, val_labels = train_test_split(train_data, train_labels, test_size=VALIDATION_SIZE, random_state=3)
+                train_data_, val_data, train_labels_, val_labels = train_test_split(train_data, train_labels, test_size=VALIDATION_SIZE, random_state=SEED, shuffle=True)
 
                 # create and train the classifier with or without partial unfreezing
                 classifier = MultiClass_Token_Classifier(inter_lm_loc, target_num_classes,

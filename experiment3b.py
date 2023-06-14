@@ -70,7 +70,7 @@ def run_experiment_3b():
         inter_data = Token_Classification_Dataset(intermediate_training_path, num_classes, language_model, seed=SEED)
         inter_train_data = inter_data.data
         inter_train_labels = inter_data.labels
-        inter_train_data, inter_val_data, inter_train_labels, inter_val_labels = train_test_split(inter_train_data, inter_train_labels, test_size=VALIDATION_SIZE, random_state=SEED)
+        inter_train_data, inter_val_data, inter_train_labels, inter_val_labels = train_test_split(inter_train_data, inter_train_labels, test_size=VALIDATION_SIZE, random_state=SEED, shuffle=True)
 
         # create and train the intermediate classifier
         inter_classifier = MultiClass_Token_Classifier(language_model, num_classes)
@@ -104,7 +104,9 @@ def run_experiment_3b():
             test_data = np.array(data.data)[test_index]
             test_labels = np.array(data.labels)[test_index]
             train_data_, val_data, train_labels_, val_labels = train_test_split(train_data, train_labels,
-                                                                                test_size=VALIDATION_SIZE, random_state=SEED)
+                                                                                test_size=VALIDATION_SIZE,
+                                                                                random_state=SEED, shuffle=True)
+
 
             # create and train the classifier
             classifier = MultiClass_Token_Classifier(inter_lm_loc, num_classes, tokenizer=persistent_language_model)
