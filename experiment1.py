@@ -28,11 +28,15 @@ def run_experiment_1():
 
         for i in range(1,NUM_FOLDS+1):
             f.write("fold " + str(i) + " micro precision\t")
+        for i in range(1, NUM_FOLDS + 1):
             f.write("fold " + str(i) + " micro recall\t")
+        for i in range(1, NUM_FOLDS + 1):
             f.write("fold " + str(i) + " micro f1\t")
-
+        for i in range(1, NUM_FOLDS + 1):
             f.write("fold " + str(i) + " macro precision\t")
+        for i in range(1, NUM_FOLDS + 1):
             f.write("fold " + str(i) + " macro recall\t")
+        for i in range(1, NUM_FOLDS + 1):
             f.write("fold " + str(i) + " macro f1\t")
         f.write("\n")
 

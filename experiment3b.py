@@ -26,13 +26,17 @@ def run_experiment_3b():
     with open(final_results_file, "a+") as f:
         f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\n")
 
-        for i in range(1,NUM_FOLDS+1):
+        for i in range(1, NUM_FOLDS + 1):
             f.write("fold " + str(i) + " micro precision\t")
+        for i in range(1, NUM_FOLDS + 1):
             f.write("fold " + str(i) + " micro recall\t")
+        for i in range(1, NUM_FOLDS + 1):
             f.write("fold " + str(i) + " micro f1\t")
-
+        for i in range(1, NUM_FOLDS + 1):
             f.write("fold " + str(i) + " macro precision\t")
+        for i in range(1, NUM_FOLDS + 1):
             f.write("fold " + str(i) + " macro recall\t")
+        for i in range(1, NUM_FOLDS + 1):
             f.write("fold " + str(i) + " macro f1\t")
         f.write("\n")
 
