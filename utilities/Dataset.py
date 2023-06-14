@@ -74,7 +74,6 @@ class Token_Classification_Dataset(Dataset):
 
     def preprocess(self, input_file, tokenizer):
         # Want to grab the training data, expand all the labels using the tokenizer
-        # Shuffle the samples, save to new file that will be called during training
         
         # Creates new label that accounts for the tokenization of a sample
         def tokenize_sample(sample, tokenizer):
@@ -101,5 +100,5 @@ class Token_Classification_Dataset(Dataset):
 
     def get_folds(self, k):
         kf = KFold(n_splits=k)
-        return kf.split(self.df)
+        return kf.split(self.df, shuffle=True, random_state=self.seed)
 
