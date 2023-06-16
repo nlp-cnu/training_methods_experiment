@@ -49,10 +49,10 @@ class Classifier:
                 so, validation_data[0] = val_x and validation_data[1] = val_y
         :param epochs: the number of epochs to train for
         """
-        training_data = DataGenerator(x, y, self.tokenizer, batch_size=batch_size)
+        training_data = DataGenerator(x, y, self.tokenizer, batch_size=batch_size, max_num_tokens=self.max_num_tokens)
 
         if validation_data is not None:
-            validation_data = DataGenerator(validation_data[0], validation_data[1], self.tokenizer, batch_size=batch_size)
+            validation_data = DataGenerator(validation_data[0], validation_data[1], self.tokenizer, batch_size=batch_size, max_num_tokens=self.max_num_tokens)
 
         callbacks = []
         if csv_log_file:
@@ -62,7 +62,7 @@ class Classifier:
         if early_stop_patience:
             early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_micro_f1', patience=early_stop_patience, mode='max', restore_best_weights=restore_best_weights) # , restore_best_weights) <== auto tracks model weights with best scores
             callbacks.append(early_stop)
-
+            
         return self.model.fit(
             training_data,
             epochs=epochs,
@@ -79,7 +79,7 @@ class Classifier:
         :return: predictions
         """
         if not isinstance(x, tf.keras.utils.Sequence):
-            tokenized = self.tokenizer(list(x), padding=True, truncation=True, max_length=MAX_NUM_TOKENS, return_tensors='tf')
+            tokenized = self.tokenizer(list(x), padding=True, truncation=True, max_length=self.max_num_tokens, return_tensors='tf')
             x = (tokenized['input_ids'], tokenized['attention_mask'])
         return self.model.predict(x, batch_size=batch_size, verbose=SILENT)
 
@@ -92,9 +92,9 @@ class Classifier:
         :param batch_size: batch size
         :return: tf.History object
         """
-        dg = DataGenerator(X, y, self.tokenizer, batch_size=batch_size)
+        dg = DataGenerator(X, y, self.tokenizer, batch_size=batch_size, max_num_tokens=self.max_num_tokens)
 #        if not isinstance(X, tf.keras.utils.Sequence):
-#            tokenized = self.tokenizer(list(X), padding=True, truncation=True, max_length=MAX_NUM_TOKENS, return_tensors='tf')
+#            tokenized = self.tokenizer(list(X), padding=True, truncation=True, max_length=self.max_num_tokens, return_tensors='tf')
 #            X = (tokenized['input_ids'], tokenized['attention_mask'])
         return self.model.evaluate(dg) # , verbose=SILENT)
 
@@ -108,14 +108,20 @@ class MultiClass_Token_Classifier(Classifier):
     """
     This constructor creates the model and compiles it for training
     """
-    def __init__(self, language_model_name, num_classes, tokenizer=None):
+    def __init__(self, language_model_name, num_classes, tokenizer=None, max_num_tokens=MAX_NUM_TOKENS):
         Classifier.__init__(self)
         self.language_model_name = language_model_name
         self.num_classes = num_classes
-
+        self.max_num_tokens=max_num_tokens
+        
         # create the tokenizer
         if tokenizer is None:
+            # You may need to do this for more updated transformer versions (transformers v4.x+:)
+            #if 'bertweet' in self.language_model_name:
+            #    self.tokenizer = AutoTokenizer.from_pretrained(self.language_model_name, use_fast=False)
+            #else:
             self.tokenizer = AutoTokenizer.from_pretrained(self.language_model_name)
+
         else:
             self.tokenizer = AutoTokenizer.from_pretrained(tokenizer)
 

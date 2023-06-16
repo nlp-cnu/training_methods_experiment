@@ -59,7 +59,11 @@ def run_experiment_1():
             Path(test_results_path).mkdir(parents=True, exist_ok=True)
 
             # load the data
-            data = Token_Classification_Dataset(training_file_path, num_classes, language_model, seed=SEED)
+            if 'bertweet' in language_model:
+                max_num_tokens = 128
+            else:
+                max_num_tokens = MAX_NUM_TOKENS
+            data = Token_Classification_Dataset(training_file_path, num_classes, language_model, seed=SEED, max_num_tokens=max_num_tokens)
             folds = list(data.get_folds(NUM_FOLDS))
 
             # perform cross-validation
@@ -75,7 +79,7 @@ def run_experiment_1():
                 train_data_, val_data, train_labels_, val_labels = train_test_split(train_data, train_labels, test_size=VALIDATION_SIZE, random_state=SEED, shuffle=True)
 
                 # create and train the classifier with or without partial unfreezing
-                classifier = MultiClass_Token_Classifier(language_model, num_classes)
+                classifier = MultiClass_Token_Classifier(language_model, num_classes, max_num_tokens=max_num_tokens)
                 if PARTIAL_UNFREEZING:
                     print ("Training the Decoder only")
                     # train the decoder
