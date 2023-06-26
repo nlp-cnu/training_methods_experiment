@@ -24,12 +24,12 @@ class Document:
         self.annotations = []
 
 def convert_DCPI():
-    train_text_file = os.path.join("raw_data", "drugprot-training-development-test-background/drugprot-gs-training-development/training/drugprot_training_abstracs.tsv")
-    train_ann_file = os.path.join("raw_data", "drugprot-training-development-test-background/drugprot-gs-training-development/training/drugprot_training_entities.tsv")
-    dev_text_file = os.path.join("raw_data", "drugprot-training-development-test-background/drugprot-gs-training-development/development/drugprot_development_abstracs.tsv")
-    dev_ann_file = os.path.join("raw_data", "drugprot-training-development-test-background/drugprot-gs-training-development/development/drugprot_development_entities.tsv")
-    test_text_file = os.path.join("raw_data", "drugprot-training-development-test-background/drugprot-gs-training-development/test-background/test_background_abstracts.tsv")
-    test_ann_file = os.path.join("raw_data", "drugprot-training-development-test-background/drugprot-gs-training-development/test-background/test_background_entities.tsv")
+    train_text_file = os.path.join("raw_data", "drugprot-gs-training-development/training/drugprot_training_abstracs.tsv")
+    train_ann_file = os.path.join("raw_data", "drugprot-gs-training-development/training/drugprot_training_entities.tsv")
+    dev_text_file = os.path.join("raw_data", "drugprot-gs-training-development/development/drugprot_development_abstracs.tsv")
+    dev_ann_file = os.path.join("raw_data", "drugprot-gs-training-development/development/drugprot_development_entities.tsv")
+    test_text_file = os.path.join("raw_data", "drugprot-gs-training-development/test-background/test_background_abstracts.tsv")
+    test_ann_file = os.path.join("raw_data", "drugprot-gs-training-development/test-background/test_background_entities.tsv")
 
     output_file = os.path.join(CONVERTED_DATASET_FILE)
     if os.path.isfile(output_file):

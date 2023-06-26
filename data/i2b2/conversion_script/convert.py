@@ -6,6 +6,7 @@ import shutil
 import pandas as pd
 import numpy as np
 
+import re
 
 CONVERTED_DATASET_FILE = "converted.tsv"
 NONE_CLASS = "none"
@@ -75,16 +76,21 @@ def process_dataset(text_dir, output_file):
     documents = []
     for _, _, files in os.walk(text_dir):
         for document in [f for f in files if ".con" not in f]:
-            with open(os.path.join(text_dir, document), "r+") as f:
-                text_id = document.split(".")[0]
-                text = "".join([line for line in f.readlines()])
-                temp_doc = Document(text, text_id)
-            ann_file = text_id + ".con" 
-            with open(os.path.join(text_dir, ann_file), "r+") as f:
-                for line in [l.strip() for l in f.readlines()]:
-                    temp_ann = Annotation(line)
-                    temp_doc.annotations.append(temp_ann)
-            documents.append(temp_doc)
+            # check to make sure this is a .txt file
+            if ".txt" in document:
+                # read the text file
+                with open(os.path.join(text_dir, document), "r") as f:
+                    text_id = document.split(".")[0]
+                    lines = f.readlines()
+                    text = "".join([line for line in lines])
+                    temp_doc = Document(text, text_id)
+                # read the corresponding annotation file
+                ann_file = text_id + ".con" 
+                with open(os.path.join(text_dir, ann_file), "r") as f:
+                    for line in [l.strip() for l in f.readlines()]:
+                        temp_ann = Annotation(line)
+                        temp_doc.annotations.append(temp_ann)
+                    documents.append(temp_doc)
 
     for doc in documents:
         process_document(doc, I2B2_CLASS_MAP, output_file)
@@ -104,7 +110,7 @@ def process_document(doc, class_map, output_file):
         if not line:
             continue
         #words = line.split()
-        words = re.findall(r'\b\w+\b|[^\s\w]', sample['text'])
+        words = re.findall(r'\b\w+\b|[^\s\w]', line)
         anns = np.zeros(len(words))
         cur_annotations = ann_dict.get(line_index, [])
         for ann in cur_annotations:
