@@ -26,9 +26,9 @@ class Annotation:
 
 
 def convert_NLM():
-    train_file = os.path.join("raw_data", "BC7T2-NLMChem-corpus-train.BioC.json")
-    dev_file = os.path.join("raw_data", "BC7T2-NLMChem-corpus-dev.BioC.json")
-    test_file = os.path.join("raw_data", "BC7T2-NLMChem-corpus-test.BioC.json")
+    train_file = os.path.join("raw_data", "BC7T2-NLMChem-corpus_v2.BioC.json", "BC7T2-NLMChem-corpus-train.BioC.json")
+    dev_file = os.path.join("raw_data", "BC7T2-NLMChem-corpus_v2.BioC.json", "BC7T2-NLMChem-corpus-dev.BioC.json")
+    test_file = os.path.join("raw_data", "BC7T2-NLMChem-corpus_v2.BioC.json", "BC7T2-NLMChem-corpus-test.BioC.json")
 
     output_file = os.path.join(CONVERTED_DATASET_FILE)
     if os.path.isfile(output_file):

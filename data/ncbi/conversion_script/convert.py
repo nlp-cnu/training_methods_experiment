@@ -72,7 +72,7 @@ def convert_NCBI():
 
         process_title_abstract(title, abstract, annotations, output_file, class_map) # The training file doesn't end with an empty line, so manually trigger this code
 
-    with open(dev_file, "r+") as f:
+    with open(dev_file, "r") as f:
         reader = csv.reader(f, delimiter="|", quoting=csv.QUOTE_NONE) # title and abstract lines are pipe-delimited
         next(reader) # development file starts on a blank line
         
@@ -106,7 +106,7 @@ def convert_NCBI():
 
         process_title_abstract(title, abstract, annotations, output_file, class_map) # The training file doesn't end with an empty line, so manually trigger this code
 
-    with open(test_file, "r+") as f:
+    with open(test_file, "r") as f:
         reader = csv.reader(f, delimiter="|", quoting=csv.QUOTE_NONE) # title and abstract lines are pipe-delimited
         # test file starts on an actual line
         
@@ -145,7 +145,7 @@ def process_title_abstract(title, abstract, annotations, output_file, class_map)
 
     all_text = title.strip() + " " + abstract.strip()
 
-    nlp = spacy.load('en_core_sci_sm') # Using this spacy model because it's quick to download and decent
+    nlp = spacy.load('en_core_sci_sm') # Using spacy to break into sentences
     sentences = [(s.text, s.text_with_ws) for s in nlp(all_text).sents]
     annotated_lines = [[] for s in sentences]
     
@@ -155,10 +155,8 @@ def process_title_abstract(title, abstract, annotations, output_file, class_map)
         sent_end = sent_start + len(s)
         amount_ws = len(ws) - len(s)
         next_sent_start = sent_end + amount_ws
-
         line_indexes.append(next_sent_start)
     
-
     for a in annotations:
         index = 0
         while a.start >= line_indexes[index]: # Find line corresponding to this annotation
@@ -185,7 +183,7 @@ def process_title_abstract(title, abstract, annotations, output_file, class_map)
             t_end = t_start + len(t)
             last_index = t_end
             token_spans.append((t_start, t_end))
-
+        
         anns = [class_map[NONE_CLASS] for _ in tokens] # Default is none/outside class
 
         for start, end, entity_type, text in annotations: # Mapping annotations to the correct tokens
@@ -193,9 +191,16 @@ def process_title_abstract(title, abstract, annotations, output_file, class_map)
             while start not in range(token_spans[token_index][0], token_spans[token_index][1] + 1):
                 token_index += 1
             start_index = token_index
-
             while end not in range(token_spans[token_index][0], token_spans[token_index][1] + 1):
+                # check if the span is longer than the sentence
+                #  This happens if the sentence splitter splits a span (usually an error with splitting)
+                #  truncate the span, and end it at the end of this sentence. This will essentially then,
+                #  train on partial spans reducing final score
+                if(token_index == len(token_spans)-1 and end >= token_spans[token_index][1]):
+                    print (f"truncating span: {line}")
+                    break
                 token_index += 1
+                    
             end_index = token_index
 
             for i in range(start_index, end_index + 1):
