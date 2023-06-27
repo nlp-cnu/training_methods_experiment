@@ -5,7 +5,9 @@ import re
 import numpy as np
 
 
-CONVERTED_DATASET_FILE = "converted.tsv"
+CONVERTED_ALL_FILE = "converted_all.tsv"
+CONVERTED_TRAIN_FILE = "converted_train.tsv"
+CONVERTED_TEST_FILE = "converted_test.tsv"
 NONE_CLASS = "none"
 N2C2_CLASS_MAP = {NONE_CLASS:0, "Drug":1, "Strength":2, "Form":3, "Dosage":4, "Frequency":5, "Route":6, "Duration":7, "Reason":8, "ADE":9}
 CHARACTER_LIM = 512
@@ -31,15 +33,19 @@ def convert_n2c2():
     train_dir = os.path.join("raw_data", "training_20180910")
     test_dir = os.path.join("raw_data", "test")
 
-    output_file = os.path.join(CONVERTED_DATASET_FILE)
-    if os.path.isfile(output_file):
-        os.remove(output_file)
+    # clear the output files (since we append to them)
+    if os.path.isfile(CONVERTED_ALL_FILE):
+        os.remove(CONVERTED_ALL_FILE)
+    if os.path.isfile(CONVERTED_TRAIN_FILE):
+        os.remove(CONVERTED_TRAIN_FILE)
+    if os.path.isfile(CONVERTED_TEST_FILE):
+        os.remove(CONVERTED_TEST_FILE)
 
-    process_set(train_dir, output_file)
-    process_set(test_dir, output_file)
+    # process and output the annotations
+    process_set(train_dir, CONVERTED_TRAIN_FILE, CONVERTED_ALL_FILE)
+    process_set(test_dir, CONVERTED_TEST_FILE, CONVERTED_ALL_FILE)
 
-
-def process_set(text_dir, output_file):
+def process_set(text_dir, individual_output_file, combined_output_file):
     documents = []
     for _, _, files in os.walk(text_dir):
         for document in [f for f in files if ".ann" not in f]:
@@ -62,10 +68,10 @@ def process_set(text_dir, output_file):
             documents.append(temp_doc)
 
     for doc in documents:
-        process_document(doc, N2C2_CLASS_MAP, output_file)
+        process_document(doc, N2C2_CLASS_MAP, individual_output_file, combined_output_file)
 
 
-def process_document(doc, class_map, output_file):
+def process_document(doc, class_map, individual_output_file, combined_output_file):
     annotation_list = np.zeros(len(doc.text))
     spaces = [i for i, char in enumerate(doc.text) if char == " "]
     newlines = [i for i, char in enumerate(doc.text) if char == "\n"]
@@ -115,7 +121,9 @@ def process_document(doc, class_map, output_file):
         line = re.sub(" +", " ", line)
         assert(len(words) == len(anns))
 
-        with open(output_file, 'a+', encoding='utf-8') as of: # Writing everything to file
+        with open(individual_output_file, 'a+', encoding='utf-8') as of: # Writing everything to file
+            of.write(f"{line}\t{anns}\n")
+        with open(combined_output_file, 'a+', encoding='utf-8') as of: # Writing everything to file
             of.write(f"{line}\t{anns}\n")
 
 

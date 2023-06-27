@@ -5,7 +5,10 @@ import spacy
 import scispacy
 import re
 
-CONVERTED_DATASET_FILE = "converted.tsv"
+CONVERTED_ALL_FILE = "converted_all.tsv"
+CONVERTED_TRAIN_FILE = "converted_train.tsv"
+CONVERTED_VAL_FILE = "converted_val.tsv"
+CONVERTED_TEST_FILE = "converted_test.tsv"
 NONE_CLASS = "none"
 NLMCHEM_CLASS_MAP = {NONE_CLASS:0, "Chemical":1}
 
@@ -30,11 +33,17 @@ def convert_NLM():
     dev_file = os.path.join("raw_data", "BC7T2-NLMChem-corpus_v2.BioC.json", "BC7T2-NLMChem-corpus-dev.BioC.json")
     test_file = os.path.join("raw_data", "BC7T2-NLMChem-corpus_v2.BioC.json", "BC7T2-NLMChem-corpus-test.BioC.json")
 
-    output_file = os.path.join(CONVERTED_DATASET_FILE)
-    if os.path.isfile(output_file):
-        os.remove(output_file)
-    class_map = NLMCHEM_CLASS_MAP
+    # clear the output files (since we append to them)
+    if os.path.isfile(CONVERTED_ALL_FILE):
+        os.remove(CONVERTED_ALL_FILE)
+    if os.path.isfile(CONVERTED_TRAIN_FILE):
+        os.remove(CONVERTED_TRAIN_FILE)
+    if os.path.isfile(CONVERTED_VAL_FILE):
+        os.remove(CONVERTED_VAL_FILE)
+    if os.path.isfile(CONVERTED_TEST_FILE):
+        os.remove(CONVERTED_TEST_FILE)
 
+    # read all the files
     with open(train_file, "r+", encoding='utf-8') as f:
         train = json.loads(f.read())
     with open(dev_file, "r+", encoding='utf-8') as f:
@@ -42,21 +51,27 @@ def convert_NLM():
     with open(test_file, "r+", encoding='utf-8') as f:
         test = json.loads(f.read())
 
-    docs = []
-
-
+    # process the documents and group them
+    train_docs = []
+    val_docs = []
+    test_docs = []
     for document in train["documents"]:
-        for passage in document["passages"]: 
-            docs.append(convert_passage(passage))
+        for passage in document["passages"]:
+            train_docs.append(convert_passage(passage))
     for document in dev["documents"]:
-        for passage in document["passages"]: 
-            docs.append(convert_passage(passage))
+        for passage in document["passages"]:
+            val_docs.append(convert_passage(passage))
     for document in test["documents"]:
         for passage in document["passages"]:
-            docs.append(convert_passage(passage))
+            test_docs.append(convert_passage(passage))
 
-    for doc in docs:
-        process_document(doc, output_file, class_map)
+    class_map = NLMCHEM_CLASS_MAP
+    for doc in train_docs:
+        process_document(doc, CONVERTED_TRAIN_FILE, CONVERTED_ALL_FILE, class_map)
+    for doc in val_docs:
+        process_document(doc, CONVERTED_VAL_FILE, CONVERTED_ALL_FILE, class_map)
+    for doc in test_docs:
+        process_document(doc, CONVERTED_TEST_FILE, CONVERTED_ALL_FILE, class_map)
 
 
 def convert_passage(passage):
@@ -79,7 +94,7 @@ def convert_passage(passage):
 
     return doc
 
-def process_document(doc, output_file, class_map):
+def process_document(doc, individual_output_file, combined_output_file, class_map):
     nlp = spacy.load("en_core_sci_sm") # Using the small spacy model
     SENTENCE_INDEX = 0 # Sentences
     WS_INDEX = 1 # Sentences + whitespace
@@ -140,7 +155,10 @@ def process_document(doc, output_file, class_map):
                 anns[i] = class_map[entity_type]
 
         if anns != []:
-            with open(output_file, 'a+', encoding='utf-8') as of: # Writing everything to file
+            # write everything to file
+            with open(individual_output_file, 'a+', encoding='utf-8') as of:
+                of.write(f"{line}\t{anns}\n")
+            with open(combined_output_file, 'a+', encoding='utf-8') as of:
                 of.write(f"{line}\t{anns}\n")
 
 

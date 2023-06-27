@@ -3,7 +3,10 @@ import numpy as np
 import pandas as pd
 import re
 
-CONVERTED_DATASET_FILE = "converted.tsv"
+CONVERTED_ALL_FILE = "converted_all.tsv"
+CONVERTED_TRAIN_FILE = "converted_train.tsv"
+CONVERTED_VAL_FILE = "converted_val.tsv"
+CONVERTED_TEST_FILE = "converted_test.tsv"
 NONE_CLASS = "none"
 BC7MED_CLASS_MAP = {NONE_CLASS:0, "drug":1}
 
@@ -29,27 +32,56 @@ def convert_Med():
     dev_file = os.path.join("raw_data", "BioCreative_ValTask3.tsv")
     test_file = os.path.join("raw_data", "BioCreative_TEST_Task3_PARTICIPANTS.tsv")
 
+    # clear the output files (since we append to them)
+    if os.path.isfile(CONVERTED_ALL_FILE):
+        os.remove(CONVERTED_ALL_FILE)
+    if os.path.isfile(CONVERTED_TRAIN_FILE):
+        os.remove(CONVERTED_TRAIN_FILE)
+    if os.path.isfile(CONVERTED_VAL_FILE):
+        os.remove(CONVERTED_VAL_FILE)
+    if os.path.isfile(CONVERTED_TEST_FILE):
+        os.remove(CONVERTED_TEST_FILE)
 
-    output_file = os.path.join(CONVERTED_DATASET_FILE)
-    if os.path.isfile(output_file):
-        os.remove(output_file)
-    class_map = BC7MED_CLASS_MAP
+    # collect tweets for train and val datasets and for individual datasets
+    all_tweets = ''
+    train_tweets = ''
+    val_tweets = ''
+    test_tweets = ''
 
-    tweet_dict = {}
-
+    # get training data
     with open(train_file_a, "r+", encoding="utf-8") as f:
         next(f)
-        tweets = f.readlines()
+        file_tweets = f.readlines()
+        train_tweets += file_tweets
+        all_tweets += file_tweets
     with open(train_file_b, "r+", encoding="utf-8") as f:
         next(f)
-        tweets += f.readlines()
+        file_tweets = f.readlines()
+        train_tweets += file_tweets
+        all_tweets += file_tweets
+    output_data(train_tweets, CONVERTED_TRAIN_FILE)
+
+    # get validation data
     with open(dev_file, "r+", encoding="utf-8") as f:
         next(f)
-        tweets += f.readlines()
-#    with open(test_file, "r+", encoding="utf-8") as f:
-#        next(f)
-#        tweets += f.readlines()
-    
+        file_tweets += f.readlines()
+        val_tweets += file_tweets
+        all_tweets += file_tweets
+    output_data(val_tweets, CONVERTED_VAL_FILE)
+
+
+    # get test data
+    with open(test_file, "r+", encoding="utf-8") as f:
+        next(f)
+        file_tweets += f.readlines()
+        test_tweets += file_tweets
+        all_tweets += file_tweets
+    output_data(test_tweets, CONVERTED_TEST_FILE)
+    output_data(all_tweets, CONVERTED_ALL_FILE)
+
+def output_data(tweets, output_file):
+    class_map = BC7MED_CLASS_MAP
+    tweet_dict = {}
 
     for tweet in tweets:
         tweet = tweet.strip()

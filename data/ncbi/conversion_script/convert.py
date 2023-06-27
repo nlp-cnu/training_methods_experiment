@@ -5,7 +5,10 @@ import scispacy
 import numpy as np
 import re
 
-CONVERTED_DATASET_FILE = "converted.tsv"
+CONVERTED_ALL_FILE = "converted_all.tsv"
+CONVERTED_TRAIN_FILE = "converted_train.tsv"
+CONVERTED_VAL_FILE = "converted_val.tsv"
+CONVERTED_TEST_FILE = "converted_test.tsv"
 NONE_CLASS = "none"
 NCBI_CLASS_MAP = {NONE_CLASS:0, "Modifier":1, "SpecificDisease":2, "DiseaseClass":3, "CompositeMention":4}
 
@@ -30,15 +33,24 @@ def convert_NCBI():
     dev_file = os.path.join("raw_data", "NCBIdevelopset_corpus.txt")
     test_file = os.path.join("raw_data", "NCBItestset_corpus.txt")
 
-    output_file = os.path.join(CONVERTED_DATASET_FILE)
-    if os.path.isfile(output_file):
-        os.remove(output_file)
+    # clear the output files (since we append to them)
+    if os.path.isfile(CONVERTED_ALL_FILE):
+        os.remove(CONVERTED_ALL_FILE)
+    if os.path.isfile(CONVERTED_TRAIN_FILE):
+        os.remove(CONVERTED_TRAIN_FILE)
+    if os.path.isfile(CONVERTED_VAL_FILE):
+        os.remove(CONVERTED_VAL_FILE)
+    if os.path.isfile(CONVERTED_TEST_FILE):
+        os.remove(CONVERTED_TEST_FILE)
+
+    # process each file
+    process_file(train_file, CONVERTED_TRAIN_FILE, CONVERTED_ALL_FILE)
+    process_file(dev_file, CONVERTED_VAL_FILE, CONVERTED_ALL_FILE)
+    process_file(test_file, CONVERTED_TEST_FILE, CONVERTED_ALL_FILE)
+
+def process_file(input_file, individual_output_file, combined_output_file):
     class_map = NCBI_CLASS_MAP
-
-    samples = []
-
-
-    with open(train_file, "r+") as f:
+    with open(input_file, "r+") as f:
         reader = csv.reader(f, delimiter="|", quoting=csv.QUOTE_NONE) # title and abstract lines are pipe-delimited
         next(reader) # training file starts on a blank line
         
@@ -57,7 +69,7 @@ def convert_NCBI():
                 continue
             else:
                 if row == []: # an empty line indicates that the annotations for the current article are done
-                    process_title_abstract(title, abstract, annotations, output_file, class_map)
+                    process_title_abstract(title, abstract, annotations, individual_output_file, combined_output_file, class_map)
 
                     counter = 0
                     title = None
@@ -70,78 +82,9 @@ def convert_NCBI():
                 annotations.append(Annotation(start, end, text, entity_class)) 
                 counter += 1
 
-        process_title_abstract(title, abstract, annotations, output_file, class_map) # The training file doesn't end with an empty line, so manually trigger this code
+        process_title_abstract(title, abstract, annotations, individual_output_file, combined_output_file, class_map) # The training file doesn't end with an empty line, so manually trigger this code
 
-    with open(dev_file, "r") as f:
-        reader = csv.reader(f, delimiter="|", quoting=csv.QUOTE_NONE) # title and abstract lines are pipe-delimited
-        next(reader) # development file starts on a blank line
-        
-        counter = 0 # Using this counter variable to find annotation lines
-        title = None
-        abstract = None
-        annotations = []
-        for row in reader:
-            if counter == 0: # Dealing with the title
-                sample_id, text_type, title = row
-                counter += 1
-                continue
-            elif counter == 1: # Dealing with the abstract
-                sample_id, text_type, abstract = row
-                counter += 1
-                continue
-            else:
-                if row == []: # an empty line indicates that the annotations for the current article are done
-                    process_title_abstract(title, abstract, annotations, output_file, class_map)
-
-                    counter = 0
-                    title = None
-                    abstract = None
-                    annotations = []
-                    # break  # for development
-                    continue
-
-                sample_id, start, end, text, entity_class, mesh_id = row[0].split('\t') # The annotation lines are tab delimited
-                annotations.append(Annotation(start, end, text, entity_class)) 
-                counter += 1
-
-        process_title_abstract(title, abstract, annotations, output_file, class_map) # The training file doesn't end with an empty line, so manually trigger this code
-
-    with open(test_file, "r") as f:
-        reader = csv.reader(f, delimiter="|", quoting=csv.QUOTE_NONE) # title and abstract lines are pipe-delimited
-        # test file starts on an actual line
-        
-        counter = 0 # Using this counter variable to find annotation lines
-        title = None
-        abstract = None
-        annotations = []
-        for row in reader:
-            if counter == 0: # Dealing with the title
-                sample_id, text_type, title = row
-                counter += 1
-                continue
-            elif counter == 1: # Dealing with the abstract
-                sample_id, text_type, abstract = row
-                counter += 1
-                continue
-            else:
-                if row == []: # an empty line indicates that the annotations for the current article are done
-                    process_title_abstract(title, abstract, annotations, output_file, class_map)
-
-                    counter = 0
-                    title = None
-                    abstract = None
-                    annotations = []
-                    # break  # for development
-                    continue
-
-                sample_id, start, end, text, entity_class, mesh_id = row[0].split('\t') # The annotation lines are tab delimited
-                annotations.append(Annotation(start, end, text, entity_class)) 
-                counter += 1
-
-        process_title_abstract(title, abstract, annotations, output_file, class_map) # The training file doesn't end with an empty line, so manually trigger this code
-
-
-def process_title_abstract(title, abstract, annotations, output_file, class_map):
+def process_title_abstract(title, abstract, annotations, individual_output_file, combined_output_file, class_map):
 
     all_text = title.strip() + " " + abstract.strip()
 
@@ -206,10 +149,11 @@ def process_title_abstract(title, abstract, annotations, output_file, class_map)
             for i in range(start_index, end_index + 1):
                 anns[i] = class_map[entity_type]
 
-
-        with open(output_file, 'a+') as of: # Writing everything to file
+        # write to the indivudal and combined files
+        with open(individual_output_file, 'a+') as of:
             of.write(f"{line}\t{anns}\n")
-        
+        with open(combined_output_file, 'a+') as of:
+            of.write(f"{line}\t{anns}\n")
 
 if __name__ == "__main__":
     convert_NCBI()

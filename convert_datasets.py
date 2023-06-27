@@ -45,4 +45,4 @@ def create_minis():
 
 if __name__ == "__main__":
     convert_all()
-    create_minis
+    #create_minis()

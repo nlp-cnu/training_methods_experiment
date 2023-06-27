@@ -8,7 +8,9 @@ import numpy as np
 
 import re
 
-CONVERTED_DATASET_FILE = "converted.tsv"
+CONVERTED_ALL_FILE = "converted_all.tsv"
+CONVERTED_TRAIN_FILE = "converted_train.tsv"
+CONVERTED_TEST_FILE = "converted_test.tsv"
 NONE_CLASS = "none"
 I2B2_CLASS_MAP = {NONE_CLASS:0, "problem":1, "treatment":2, "test":3}
 
@@ -48,6 +50,7 @@ class Annotation:
 
 
 def convert_i2b2():
+    # set file names
     train_data_dir_beth = os.path.join("raw_data", "concept_assertion_relation_training_data", "beth", "txt")
     train_ann_dir_beth = os.path.join("raw_data", "concept_assertion_relation_training_data", "beth", "concept")
     train_data_dir_partners = os.path.join("raw_data", "concept_assertion_relation_training_data", "partners", "txt")
@@ -55,22 +58,39 @@ def convert_i2b2():
     test_data_dir = os.path.join("raw_data", "test_data", "txt")
     test_ann_dir = os.path.join("raw_data", "test_data", "concept")
 
+    # clear the output files (since we append to them)
+    if os.path.isfile(CONVERTED_ALL_FILE):
+        os.remove(CONVERTED_ALL_FILE)
+    if os.path.isfile(CONVERTED_TRAIN_FILE):
+        os.remove(CONVERTED_TRAIN_FILE)
+    if os.path.isfile(CONVERTED_TEST_FILE):
+        os.remove(CONVERTED_TEST_FILE)
+
+    # set up the train, test, and all folders
+    train_folders = [train_data_dir_beth, train_ann_dir_beth,
+                train_data_dir_partners, train_ann_dir_partners]
+    test_folders = [test_data_dir, test_ann_dir]
+    all_folders = []
+    all_folders.extend(train_folders)
+    all_folders.extend(test_folders)
+
+    # process and output the train, test, and test+train datasets
+    process_folders(all_folders, CONVERTED_ALL_FILE)
+    process_folders(train_folders, CONVERTED_TRAIN_FILE)
+    process_folders(test_folders, CONVERTED_TEST_FILE)
+
+
+def process_folders(folders, output_file):
+    # process all files in a list of folders
     with tempfile.TemporaryDirectory() as tempdir:
-        for src in [train_data_dir_beth, train_ann_dir_beth,
-                train_data_dir_partners, train_ann_dir_partners,
-                test_data_dir, test_ann_dir]:
+        for src in folders:
             src_files = os.listdir(src)
             for file_name in src_files:
                 full_file_name = os.path.join(src, file_name)
                 if os.path.isfile(full_file_name):
                     shutil.copy(full_file_name, tempdir)
 
-        output_file = os.path.join(CONVERTED_DATASET_FILE)
-        if os.path.isfile(output_file):
-            os.remove(output_file)
-
         process_dataset(tempdir, output_file)
-
 
 def process_dataset(text_dir, output_file):
     documents = []

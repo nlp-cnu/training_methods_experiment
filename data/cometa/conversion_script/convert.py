@@ -5,7 +5,10 @@ import pandas as pd
 import re
 
 COMETA_CLASS = "BiomedicalEntity"
-CONVERTED_DATASET_FILE = "converted.tsv"
+CONVERTED_ALL_FILE = "converted_all.tsv"
+CONVERTED_TRAIN_FILE = "converted_train.tsv"
+CONVERTED_VAL_FILE = "converted_val.tsv"
+CONVERTED_TEST_FILE = "converted_test.tsv"
 NONE_CLASS = "none"
 COMETA_CLASS_MAP = {NONE_CLASS:0, "BiomedicalEntity":1}
 
@@ -29,18 +32,27 @@ def convert_cometa():
     train_file = os.path.join("raw_data", "cometa", "splits", "random", "train.csv")
     dev_file = os.path.join("raw_data", "cometa", "splits", "random", "dev.csv")
     test_file = os.path.join("raw_data", "cometa", "splits", "random", "test.csv")
-    
-    output_file = os.path.join(CONVERTED_DATASET_FILE)
-    if os.path.isfile(output_file):
-        os.remove(output_file)
-    class_map = COMETA_CLASS_MAP
+
+    # clear the output files (since we append to them)
+    if os.path.isfile(CONVERTED_ALL_FILE):
+        os.remove(CONVERTED_ALL_FILE)
+    if os.path.isfile(CONVERTED_TRAIN_FILE):
+        os.remove(CONVERTED_TRAIN_FILE)
+    if os.path.isfile(CONVERTED_VAL_FILE):
+        os.remove(CONVERTED_VAL_FILE)
+    if os.path.isfile(CONVERTED_TEST_FILE):
+        os.remove(CONVERTED_TEST_FILE)
 
     train_samples = process_documents(train_file)
     dev_samples = process_documents(dev_file)
     test_samples = process_documents(test_file)
 
-    documents = train_samples + dev_samples + test_samples
-    process_all_samples(documents, output_file, class_map)
+    class_map = COMETA_CLASS_MAP
+    all_samples = train_samples + dev_samples + test_samples
+    process_all_samples(all_samples, CONVERTED_ALL_FILE, class_map)
+    process_all_samples(train_samples, CONVERTED_TRAIN_FILE, class_map)
+    process_all_samples(dev_samples, CONVERTED_VAL_FILE, class_map)
+    process_all_samples(test_samples, CONVERTED_TEST_FILE, class_map)
     
 def process_documents(input_file):
     documents = []

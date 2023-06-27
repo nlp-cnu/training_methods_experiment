@@ -4,7 +4,10 @@ import scispacy
 import numpy as np
 import re
 
-CONVERTED_DATASET_FILE = "converted.tsv"
+CONVERTED_ALL_FILE = "converted_all.tsv"
+CONVERTED_TRAIN_FILE = "converted_train.tsv"
+CONVERTED_VAL_FILE = "converted_val.tsv"
+CONVERTED_TEST_FILE = "converted_test.tsv"
 NONE_CLASS = "none"
 DCPI_CLASS_MAP = {NONE_CLASS:0, "CHEMICAL":1, "GENE-Y":2, "GENE-N":2, "GENE":2}
 
@@ -31,15 +34,23 @@ def convert_DCPI():
     test_text_file = os.path.join("raw_data", "drugprot-gs-training-development/test-background/test_background_abstracts.tsv")
     test_ann_file = os.path.join("raw_data", "drugprot-gs-training-development/test-background/test_background_entities.tsv")
 
-    output_file = os.path.join(CONVERTED_DATASET_FILE)
-    if os.path.isfile(output_file):
-        os.remove(output_file)
+    # clear any existing files (since we append to them)
+    if os.path.isfile(CONVERTED_ALL_FILE):
+        os.remove(CONVERTED_ALL_FILE)
+    if os.path.isfile(CONVERTED_TRAIN_FILE):
+        os.remove(CONVERTED_TRAIN_FILE)
+    if os.path.isfile(CONVERTED_VAL_FILE):
+        os.remove(CONVERTED_VAL_FILE)
+    if os.path.isfile(CONVERTED_TEST_FILE):
+        os.remove(CONVERTED_TEST_FILE)
 
-    process_set(train_text_file, train_ann_file, output_file)
-    process_set(dev_text_file, dev_ann_file, output_file)
+    process_set(train_text_file, train_ann_file, CONVERTED_ALL_FILE, CONVERTED_TRAIN_FILE)
+    process_set(dev_text_file, dev_ann_file, CONVERTED_ALL_FILE, CONVERTED_VAL_FILE)
+    process_set(test_text_file, test_ann_file, CONVERTED_ALL_FILE, CONVERTED_TEST_FILE)
 
 
-def process_set(text_file, ann_file, output_file):
+def process_set(text_file, ann_file, all_output_file, individual_output_file):
+
     with open(text_file, "r+", encoding="utf-8") as f:
         titles_abstracts = f.readlines()
     with open(ann_file, "r+", encoding="utf-8") as f:
@@ -63,10 +74,10 @@ def process_set(text_file, ann_file, output_file):
     for text_id in text_ann_dict:
         doc = text_ann_dict[text_id]
         # Now process annotations with the text
-        process_document(doc, DCPI_CLASS_MAP, output_file)
+        process_document(doc, DCPI_CLASS_MAP, all_output_file, individual_output_file)
 
 
-def process_document(doc, class_map, output_file):
+def process_document(doc, class_map, all_output_file, individual_output_file):
     nlp = spacy.load("en_core_sci_sm") # Using the small spacy model
     SENTENCE_INDEX = 0 # Sentences
     WS_INDEX = 1 # Sentences + whitespace
@@ -121,15 +132,15 @@ def process_document(doc, class_map, output_file):
                 # print("Annotation:", text)
                 end_index -= 1
 
-
             for i in range(start_index, end_index + 1):
                 anns[i] = class_map[entity_type]
 
-
-        with open(output_file, 'a+', encoding='utf-8') as of: # Writing everything to file
-            of.write(f"{line}\t{anns}\n")
-
-
+        if not all_output_file is None:
+            with open(all_output_file, 'a+', encoding='utf-8') as f: # Writing everything to file
+                f.write(f"{line}\t{anns}\n")
+        if not individual_output_file is None:
+            with open(individual_output_file, 'a+', encoding='utf-8') as f: # Writing everything to file
+                f.write(f"{line}\t{anns}\n")
 
 
 if __name__ == "__main__":
