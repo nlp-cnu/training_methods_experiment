@@ -85,10 +85,10 @@ def process_file(input_file, individual_output_file, combined_output_file):
         process_title_abstract(title, abstract, annotations, individual_output_file, combined_output_file, class_map) # The training file doesn't end with an empty line, so manually trigger this code
 
 def process_title_abstract(title, abstract, annotations, individual_output_file, combined_output_file, class_map):
-
     all_text = title.strip() + " " + abstract.strip()
 
-    nlp = spacy.load('en_core_sci_sm') # Using spacy to break into sentences
+    # Using spacy to break into sentences
+    nlp = spacy.load('en_core_sci_sm')
     sentences = [(s.text, s.text_with_ws) for s in nlp(all_text).sents]
     annotated_lines = [[] for s in sentences]
     

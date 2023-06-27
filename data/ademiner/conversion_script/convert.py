@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import re
 
-CONVERTED_DATASET_FILE = "converted.tsv"
+CONVERTED_DATASET_FILE = "converted_all.tsv"
 NONE_CLASS = "none"
 ADEMINER_CLASS_MAP = {NONE_CLASS:0, "ADE":1}
 
