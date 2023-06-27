@@ -43,10 +43,10 @@ def convert_Med():
         os.remove(CONVERTED_TEST_FILE)
 
     # collect tweets for train and val datasets and for individual datasets
-    all_tweets = ''
-    train_tweets = ''
-    val_tweets = ''
-    test_tweets = ''
+    all_tweets = []
+    train_tweets = []
+    val_tweets = []
+    test_tweets = []
 
     # get training data
     with open(train_file_a, "r+", encoding="utf-8") as f:

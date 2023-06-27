@@ -1,6 +1,7 @@
 import os
 import sys
 import numpy as np
+import re
 
 CONVERTED_DATASET_FILE = "converted.tsv"
 NONE_CLASS = "none"
@@ -23,8 +24,8 @@ class Annotation:
 
 
 def convert_ade():
-    train_file = os.path.join("HLP-ADE-v1", "train_tweets.tsv")
-    train_anns = os.path.join("HLP-ADE-v1", "train_annotations.tsv")
+    train_file = os.path.join("raw_data", "HLP-ADE-v1", "train_tweets.tsv")
+    train_anns = os.path.join("raw_data", "HLP-ADE-v1", "train_annotations.tsv")
 
     output_file = os.path.join(CONVERTED_DATASET_FILE)
     if os.path.isfile(output_file):
@@ -53,7 +54,8 @@ def convert_ade():
             of.write(f"{doc.text}\t{annotations}\n")
 
 def process_annotations(doc, class_map):
-    tokens = doc.text.split()
+    #tokens = doc.text.split()
+    tokens = re.findall(r'\b\w+\b|[^\s\w]', doc.text)
     last_index = 0
     token_spans = []
 
@@ -62,7 +64,6 @@ def process_annotations(doc, class_map):
         t_end = t_start + len(t)
         last_index = t_end
         token_spans.append((t_start, t_end))
-
 
     anns = [class_map[NONE_CLASS] for _ in tokens] # Default is none/outside class
     

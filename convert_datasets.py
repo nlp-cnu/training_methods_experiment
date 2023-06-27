@@ -2,18 +2,18 @@ import os
 
 import pandas as pd
 
-from data.ademiner.convert import convert_ade
-from data.ncbi.convert import convert_NCBI
-from data.n2c2.convert import convert_n2c2
-from data.onto.convert import convert_onto
-from data.i2b2.convert import convert_i2b2
-from data.cdr.convert import convert_cdr
-from data.bc7med.convert import convert_Med
-from data.bc7dcpi.convert import convert_DCPI
-from data.cometa.convert import convert_cometa
-from data.nlmchem.convert import convert_NLM
+from data.ademiner.conversion_script.convert import convert_ade
+from data.ncbi.conversion_script.convert import convert_NCBI
+from data.n2c2.conversion_script.convert import convert_n2c2
+from data.onto.conversion_script.convert import convert_onto
+from data.i2b2.conversion_script.convert import convert_i2b2
+from data.cdr.conversion_script.convert import convert_cdr
+from data.bc7med.conversion_script.convert import convert_Med
+from data.bc7dcpi.conversion_script.convert import convert_DCPI
+from data.cometa.conversion_script.convert import convert_cometa
+from data.nlmchem.conversion_script.convert import convert_NLM
 
-from constants import *
+from utilities.constants import *
 
 def convert_all():
     conversion_dict = {ONTO_DATA: convert_onto, 
