@@ -52,6 +52,7 @@ def process_file(input_file, individual_output_file, combined_output_file):
     class_map = NCBI_CLASS_MAP
     with open(input_file, "r+") as f:
         reader = csv.reader(f, delimiter="|", quoting=csv.QUOTE_NONE) # title and abstract lines are pipe-delimited
+        
         next(reader) # training file starts on a blank line
         
         counter = 0 # Using this counter variable to find annotation lines
@@ -59,6 +60,11 @@ def process_file(input_file, individual_output_file, combined_output_file):
         abstract = None
         annotations = []
         for row in reader:
+            if counter == 0 and len(row) == 0:
+                # train and dev start with empty lines. Test does not
+                # skip empty lines at the beginning of files 
+                next
+    
             if counter == 0: # Dealing with the title
                 sample_id, text_type, title = row
                 counter += 1
