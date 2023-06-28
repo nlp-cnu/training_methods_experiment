@@ -4,7 +4,7 @@ import glob
 import shutil
 from pathlib import Path
 
-CONVERTED_DATASET_FILE = "converted.tsv"
+CONVERTED_DATASET_FILE = "converted_all.tsv"
 NONE_CLASS = "none"
 ONTO_CLASS_MAP = {NONE_CLASS:0, 'GPE': 1, 'ORDINAL': 2, 'DATE': 3, 'CARDINAL': 4, 'ORG': 5, 'PERCENT': 6, 'NORP': 7, 'MONEY': 8, 'PERSON': 9, 'LOC': 10, 'TIME': 11, 'WORK_OF_ART': 12, 'LAW': 13, 'QUANTITY': 14, 'EVENT': 15, 'PRODUCT': 16, 'FAC': 17, 'LANGUAGE': 18}
 
