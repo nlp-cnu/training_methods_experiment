@@ -118,7 +118,6 @@ def make_annotations(tweet, class_map):
         start = a.start
         end = a.end
 
-                
         token_index = 0
 
         while start not in range(token_spans[token_index][0], token_spans[token_index][1] + 1):

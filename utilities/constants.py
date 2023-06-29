@@ -43,7 +43,7 @@ RESULTS_DIR_PATH = "results"
 
 STATISTICS_DIR = os.path.join(RESULTS_DIR_PATH, "dataset")
 STATISTICS_FILE = os.path.join(STATISTICS_DIR, "dataset_statistics.txt")
-CONVERTED_DATASET_FILE = "converted.tsv"
+CONVERTED_DATASET_FILE = "converted_all.tsv"
 CONVERTED_DATASET_FILE_MINI = "converted_mini.tsv"
 
 EXPERIMENT_1_RESULTS = "experiment_1_results"

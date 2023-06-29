@@ -13,6 +13,7 @@ from transformers import logging
 from utilities.Classifier import *
 from utilities.Dataset import *
 from utilities.constants import *
+from utilities.Evaluator import *
 
 
 def run_experiment_1():
@@ -73,9 +74,16 @@ def run_experiment_1():
                 # get train, validation, test data for this fold
                 train_index, test_index = train_test
                 train_data = np.array(data.data)[train_index]
-                train_labels = np.array(data.labels)[train_index]
                 test_data = np.array(data.data)[test_index]
-                test_labels = np.array(data.labels)[test_index]
+                train_labels = []
+                for sample_index in train_index:
+                    train_labels.append(data.labels[sample_index])
+                test_labels = []
+                for sample_index in test_index:
+                    test_labels.append(data.labels[sample_index])
+                #test_labels = data.labels[test_index]
+
+                # get validation split
                 train_data_, val_data, train_labels_, val_labels = train_test_split(train_data, train_labels, test_size=VALIDATION_SIZE, random_state=SEED, shuffle=True)
 
                 # create and train the classifier with or without partial unfreezing
@@ -105,6 +113,7 @@ def run_experiment_1():
                 gc.collect()
                 del classifier
 
+
             ## collect statistics from cross-validation
             pred_micro_precisions = []
             pred_macro_precisions = []
@@ -113,85 +122,113 @@ def run_experiment_1():
             pred_micro_f1s = []
             pred_macro_f1s = []
 
+
+
             # For each fold there is a y_true and y_pred
             for p, g in zip(predictions, golds):
+
+                # get the class names
+                class_names = list(class_map)
+                binary_task = len(class_map) == 2
+                if binary_task:
+                    class_names = list(class_map[1:])
+
+                # get statistics
+                micro_averaged_stats, macro_averaged_stats = evaluate_predictions(p, g, class_names)
+
+                #record statistics
+                micro_precision = micro_averaged_stats["precision"]
+                pred_micro_precisions.append(micro_precision)
+                micro_recall = micro_averaged_stats["recall"]
+                pred_micro_recalls.append(micro_recall)
+                micro_f1 = micro_averaged_stats["f1-score"]
+                pred_micro_f1s.append(micro_f1)
+
+                macro_precision = macro_averaged_stats["precision"]
+                pred_macro_precisions.append(macro_precision)
+                macro_recall = macro_averaged_stats["recall"]
+                pred_macro_recalls.append(macro_recall)
+                macro_f1 = macro_averaged_stats["f1-score"]
+                pred_macro_f1s.append(macro_f1)
+
+
+
                 # making y_pred and y_true have the same size by trimming
-                num_samples = p.shape[0]
-                max_num_tokens_in_batch = p.shape[1]
-                # Transforms g to the same size as P
-                # removes the NONE class
-                g = g[:, :max_num_tokens_in_batch, :]
+                #num_samples = p.shape[0]
+                #max_num_tokens_in_batch = p.shape[1]
+                ## Transforms g to the same size as P
+                ## removes the NONE class
+                #g = g[:, :max_num_tokens_in_batch, :]
+                #
+                #gt_final = []
+                #pred_final = []
+                #
+                #for sample_pred, sample_gt, i in zip(p, g, range(num_samples)):
+                #    # Find where the gt labels stop (preds will be junk after this) and trim the labels and predictions
+                #    trim_index = 0
+                #    while trim_index < len(sample_gt) and not all(v == 0 for v in sample_gt[trim_index]):
+                #        trim_index += 1
+                #    sample_gt = sample_gt[:trim_index, :]
+                #    for s in sample_gt:
+                #        gt_final.append(s.tolist())
+                #
+                #    sample_pred = (sample_pred == sample_pred.max(axis=1)[:,None]).astype(int)
+                #    sample_pred = sample_pred[:trim_index, :]
+                #    for s in sample_pred:
+                #        pred_final.append(s.tolist())
+                #
+                ## Transforming the predictions and labels so that the NONE class is not counted
+                #p = np.array(pred_final)
+                #g = np.array(gt_final)
 
-                gt_final = []
-                pred_final = []
-
-                for sample_pred, sample_gt, i in zip(p, g, range(num_samples)):
-                    # Find where the gt labels stop (preds will be junk after this) and trim the labels and predictions
-                    trim_index = 0
-                    while trim_index < len(sample_gt) and not all(v == 0 for v in sample_gt[trim_index]):
-                        trim_index += 1
-                    sample_gt = sample_gt[:trim_index, :]
-                    for s in sample_gt:
-                        gt_final.append(s.tolist())
-
-                    sample_pred = (sample_pred == sample_pred.max(axis=1)[:,None]).astype(int)
-                    sample_pred = sample_pred[:trim_index, :]
-                    for s in sample_pred:
-                        pred_final.append(s.tolist())
-
-                # Transforming the predictions and labels so that the NONE class is not counted
-                p = np.array(pred_final)
-                g = np.array(gt_final)
-
-                p = p.reshape((-1, num_classes))[:, 1:]
-                g = g.reshape((-1, num_classes))[:, 1:]
+                #p = p.reshape((-1, num_classes))[:, 1:]
+                #g = g.reshape((-1, num_classes))[:, 1:]
 
                 # Calculating the metrics w/ sklearn
-                binary_task = len(class_map) == 2
+                #binary_task = len(class_map) == 2
 
-                if binary_task:
-                    target_names = list(class_map)
-                    report_metrics = classification_report(g, p, target_names=target_names, digits=3, output_dict=True)
-
-                    # collecting the reported metrics
-                    # The macro and micro f1 scores are the same for the binary classification task
-                    micro_averaged_stats = report_metrics["macro avg"]
-                    micro_precision = micro_averaged_stats["precision"]
-                    pred_micro_precisions.append(micro_precision)
-                    micro_recall = micro_averaged_stats["recall"]
-                    pred_micro_recalls.append(micro_recall)
-                    micro_f1 = micro_averaged_stats["f1-score"]
-                    pred_micro_f1s.append(micro_f1)
-
-                    macro_averaged_stats = report_metrics["macro avg"]
-                    macro_precision = macro_averaged_stats["precision"]
-                    pred_macro_precisions.append(macro_precision)
-                    macro_recall = macro_averaged_stats["recall"]
-                    pred_macro_recalls.append(macro_recall)
-                    macro_f1 = macro_averaged_stats["f1-score"]
-                    pred_macro_f1s.append(macro_f1)
-
-
-                else:
-                    target_names = list(class_map)[1:]
-                    report_metrics = classification_report(g, p, target_names=target_names, digits=3, output_dict=True)
-
-                    # collecting the reported metrics
-                    micro_averaged_stats = report_metrics["micro avg"]
-                    micro_precision = micro_averaged_stats["precision"]
-                    pred_micro_precisions.append(micro_precision)
-                    micro_recall = micro_averaged_stats["recall"]
-                    pred_micro_recalls.append(micro_recall)
-                    micro_f1 = micro_averaged_stats["f1-score"]
-                    pred_micro_f1s.append(micro_f1)
-
-                    macro_averaged_stats = report_metrics["macro avg"]
-                    macro_precision = macro_averaged_stats["precision"]
-                    pred_macro_precisions.append(macro_precision)
-                    macro_recall = macro_averaged_stats["recall"]
-                    pred_macro_recalls.append(macro_recall)
-                    macro_f1 = macro_averaged_stats["f1-score"]
-                    pred_macro_f1s.append(macro_f1)
+                #if binary_task:
+                #    target_names = list(class_map)
+                #    report_metrics = classification_report(g, p, target_names=target_names, digits=3, output_dict=True)
+                #
+                #    # collecting the reported metrics
+                #    # The macro and micro f1 scores are the same for the binary classification task
+                #    micro_averaged_stats = report_metrics["macro avg"]
+                #    micro_precision = micro_averaged_stats["precision"]
+                #    pred_micro_precisions.append(micro_precision)
+                #    micro_recall = micro_averaged_stats["recall"]
+                #    pred_micro_recalls.append(micro_recall)
+                #    micro_f1 = micro_averaged_stats["f1-score"]
+                #    pred_micro_f1s.append(micro_f1)
+                #
+                #    macro_averaged_stats = report_metrics["macro avg"]
+                #    macro_precision = macro_averaged_stats["precision"]
+                #    pred_macro_precisions.append(macro_precision)
+                #    macro_recall = macro_averaged_stats["recall"]
+                #    pred_macro_recalls.append(macro_recall)
+                #    macro_f1 = macro_averaged_stats["f1-score"]
+                #    pred_macro_f1s.append(macro_f1)
+                #
+                #else:
+                #    target_names = list(class_map)[1:]
+                #    report_metrics = classification_report(g, p, target_names=target_names, digits=3, output_dict=True)
+                #
+                #    # collecting the reported metrics
+                #    micro_averaged_stats = report_metrics["micro avg"]
+                #    micro_precision = micro_averaged_stats["precision"]
+                #    pred_micro_precisions.append(micro_precision)
+                #    micro_recall = micro_averaged_stats["recall"]
+                #    pred_micro_recalls.append(micro_recall)
+                #    micro_f1 = micro_averaged_stats["f1-score"]
+                #    pred_micro_f1s.append(micro_f1)
+                #
+                #    macro_averaged_stats = report_metrics["macro avg"]
+                #    macro_precision = macro_averaged_stats["precision"]
+                #    pred_macro_precisions.append(macro_precision)
+                #    macro_recall = macro_averaged_stats["recall"]
+                #    pred_macro_recalls.append(macro_recall)
+                #    macro_f1 = macro_averaged_stats["f1-score"]
+                #    pred_macro_f1s.append(macro_f1)
 
             
             # Writing the reported metrics to file

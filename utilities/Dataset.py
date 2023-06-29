@@ -11,88 +11,107 @@ from transformers import AutoTokenizer, TFAutoModel
 
 from utilities.constants import *
 
-class Dataset:
-    def __init__(self, seed=SEED, test_set_size=0):
+import regex
+import re
+
+class Token_Classification_Dataset:
+    def __init__(self, data_file_path, num_classes, language_model_name, seed=SEED, test_set_size=0,
+                 max_num_tokens=512, shuffle_data=True):
         self.seed = seed
-        self.test_set_size = test_set_size
-
-    def _test_train_split(self, data, labels):
-        self.train_X = data
-        self.train_Y = labels
-        self.test_X = None
-        self.test_Y = None
-           
-    def _determine_class_weights(self):
-        # determine class weights
-        self.class_weights = class_weight.compute_class_weight(
-            class_weight='balanced',
-            classes=np.unique(self.train_Y),
-            y=self.train_Y 
-        )
-        self.class_weights = dict(enumerate(self.class_weights))
-
-    def get_train_data(self):
-        return self.train_X, self.train_Y
-
-    def get_train_class_weights(self):
-        return self.class_weights
-
-    def get_test_data(self):
-        if self.test_X is None or self.test_Y is None:
-            raise Exception("Error: test data does not exist")
-        return self.test_X, self.test_Y
-
-    def preprocess_data(self, data):
-        return data.tolist()
-    
-
-class Token_Classification_Dataset(Dataset):
-    def __init__(self, data_file_path, num_classes, language_model_name, seed=SEED, test_set_size=0, max_num_tokens=MAX_NUM_TOKENS):
-        Dataset.__init__(self, seed=seed, test_set_size=test_set_size)
         self.num_classes = num_classes
+
+        # load and preprocess the data
         tokenizer = AutoTokenizer.from_pretrained(language_model_name)
-        self.df = self.preprocess(data_file_path, tokenizer)
+        df = self.preprocess(data_file_path, tokenizer)
+        self.data = df["text"].tolist()
 
-        self.labels = np.zeros([len(self.df['annotation']), max_num_tokens, self.num_classes])
+        # create the labels datastructure from the loaded labels in the data frame
+        # self.labels = np.zeros([len(self.df['annotation']), max_num_tokens, self.num_classes])
+        self.labels = []
 
-        # Need to make a big array that is ixjxnum_classes, where i is the ith token, j is the number of tokens
+        # Convert from categorical encoding to binary encoding
+        # Need to make a big array that is i x j x num_classes, where i is the ith token, j is the number of tokens
         num_lost = 0
+        num_samples = len(df['annotation'])
+        for sample_num in range(num_samples):
+            num_tokens = len(df['annotation'][sample_num])
 
-        num_samples = len(self.df['annotation'])
-        for i in range(num_samples):
-            num_tokens = len(self.df['annotation'][i])
-            if num_tokens > 512:
-                num_lost += num_tokens - 512
-            for j in range(num_tokens)[:max_num_tokens]:
-                positive_class_index = self.df['annotation'][i][j]
-                self.labels[i][j][int(positive_class_index)] = 1.0
+            # check if the annotations are getting truncated
+            if num_tokens > max_num_tokens:
+                num_lost += num_tokens - max_num_tokens
 
-        self.data = self.df["text"].tolist()
-        self._test_train_split(self.data, self.labels)
-        print("Number of lost tokens:", num_lost)
-        
+            # create a matrix of annotations for this line. That is, vector per token in the line
+            #  up to the max_num_tokens
+            # for j in range(num_tokens)[:max_num_tokens]:
+            sample_annotations = np.zeros([num_tokens, num_classes])
+            for token_num in range(num_tokens):
+                # grab the class the token belongs to
+                true_class = int(df['annotation'][sample_num][token_num])
+
+                # create the vector for this annotation
+                if num_classes > 1:
+                    # self.labels[i][j][int(true_class)] = 1.0
+                    sample_annotations[token_num, true_class] = 1.0
+                else:  # binary
+                    # 0 indicates the None class, which we don't annotate, otherwise set the class to 1
+                    if true_class > 0:
+                        class_index = true_class - 1
+                        # self.labels[i][j][int(class_index)] = 1.0
+                        sample_annotations[token_num, class_index] = 1.0
+
+            # add this sample (line) to the list of annotations
+            self.labels.append(sample_annotations)
+
+        print("Number of lost tokens due to truncation:", num_lost)
 
     def preprocess(self, input_file, tokenizer):
         # Want to grab the training data, expand all the labels using the tokenizer
-        
         # Creates new label that accounts for the tokenization of a sample
         def tokenize_sample(sample, tokenizer):
-            new_label = []
-            tok_lengths = [len(tok) - 2 for tok in tokenizer(sample['text'].split())['input_ids']]
+            # get a list containing the number of tokens split by space and punctuation
+            naive_tokens = re.findall(r'\b\w+\b|[^\s\w]', sample['text'])
+            token_lengths = [len(tok) - 2 for tok in tokenizer(naive_tokens)['input_ids']]
 
-            label = sample['annotation']
-            # this index is following the labels, but the tok_lengths index
-            # is one less because it does not account for the [CLS] and [SEP] tags
-            for i in range(len(label)):
-                l = label[i]
-                new_l = [l] * tok_lengths[i]
-                new_label.extend(new_l)
-            new_label = [0] + new_label + [0]
-            return new_label
-        
+            # Create the new labels, which maps the space separated labels to token labels
+            new_labels = []
+            # add a 0 label for the [CLS] token
+            new_labels.append(0)
 
-        df = pd.read_csv(input_file, delimiter='\t', header=None, names=['text', 'annotation'], keep_default_na=False, quoting=csv.QUOTE_NONE)
+            # extend each label to the number of tokens in that space separated "word"
+            labels = sample['annotation']
+            for i in range(len(labels)):
+                # add the new labels
+                labels_for_this_word = [labels[i]] * token_lengths[i]
+                new_labels.extend(labels_for_this_word)
+                # The code above (^) does this (v), but it is way faster
+                # for j in range(token_lengths[i]):
+                #    new_labels.append(labels[i])s
+
+            # add a 0 label for the SEP token and return
+            new_labels.append(0)
+            return new_labels
+
+        # assumes classes are encoded as a real number, so a single annotation per class
+        df = pd.read_csv(input_file, delimiter='\t', header=None, names=['text', 'annotation'], keep_default_na=False,
+                         quoting=csv.QUOTE_NONE)  # , encoding='utf-8')
+
+        # replace non-standard space characters with a space
+        df['text'] = df['text'].apply(lambda x: regex.sub(r'\p{Zs}', ' ', x))
+
+        # NOTE: This could make performance worse, but [UNK] tokens are a big problems for converting between formats
+        # replace non-ascii characters with *
+        #  if we just remove them then it can throw off the labels
+        for i in range(len(df['text'].values)):
+            text_list = list(df.iloc[i]['text'])
+            for j, char in enumerate(text_list):
+                if ord(char) > 127:
+                    # replace everything else with an asterisk
+                    text_list[j] = '*'
+            df.iloc[i]['text'] = "".join(text_list)
+
+        # convert the annotation to numbers
         df['annotation'] = df['annotation'].apply(literal_eval)
+        # expand the annotations to match the tokens (a word may be multiple tokens)
         df['annotation'] = df.apply(tokenize_sample, tokenizer=tokenizer, axis=1)
 
         # See if you can just return this new dataframe, instead of saving all of this extra data
@@ -100,5 +119,5 @@ class Token_Classification_Dataset(Dataset):
 
     def get_folds(self, k):
         kf = KFold(n_splits=k, random_state=self.seed, shuffle=True)
-        return kf.split(self.df)
+        return kf.split(self.data)
 
