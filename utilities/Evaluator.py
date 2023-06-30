@@ -145,16 +145,16 @@ def collect_and_output_results(predictions, golds, class_map, final_results_file
     pred_micro_f1s = []
     pred_macro_f1s = []
 
-    # TODO _ DELETE THIS PICKLE PORTION
+    # TODO _ DELETE THIS PICKLE PORTION --- BUT USEFUL FOR DEBUGGING
     import pickle
     with open('temp_pred_file.pkl', 'wb') as file:
         pickle.dump(predictions, file)
     with open('temp_gold_file.pkl', 'wb') as file:
         pickle.dump(golds, file)
-    # with open('temp_pred_file.pkl', 'rb') as file:
+    #with open('temp_pred_file.pkl', 'rb') as file:
     #    predictions = pickle.load(file)
-    # with open('temp_gold_file.pkl', 'rb') as file:
-    #    golds = pickle.load(file)
+    #with open('temp_gold_file.pkl', 'rb') as file:
+    #   golds = pickle.load(file)
 
     # For each fold there is a y_true and y_pred
     for p, g in zip(predictions, golds):
@@ -173,14 +173,14 @@ def collect_and_output_results(predictions, golds, class_map, final_results_file
         pred_micro_precisions.append(micro_precision)
         micro_recall = micro_averaged_stats["recall"]
         pred_micro_recalls.append(micro_recall)
-        micro_f1 = micro_averaged_stats["f1-score"]
+        micro_f1 = micro_averaged_stats["f1"]
         pred_micro_f1s.append(micro_f1)
 
         macro_precision = macro_averaged_stats["precision"]
         pred_macro_precisions.append(macro_precision)
         macro_recall = macro_averaged_stats["recall"]
         pred_macro_recalls.append(macro_recall)
-        macro_f1 = macro_averaged_stats["f1-score"]
+        macro_f1 = macro_averaged_stats["f1"]
         pred_macro_f1s.append(macro_f1)
 
     # Writing the reported metrics to file

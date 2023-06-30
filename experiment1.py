@@ -60,10 +60,7 @@ def run_experiment_1():
             Path(test_results_path).mkdir(parents=True, exist_ok=True)
 
             # create the tokenizer - it must be consistent across classifier and dataset
-            tokenizer_name = language_model_name
-            if 'bertweet' in language_model:
-                tokenizer_name = 'vinai/bertweet-base'
-            tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+            tokenizer = AutoTokenizer.from_pretrained(language_model)
 
             # load the data
             # bertweet has a max_num_tokens of 128, all others are MAX_NUM_TOKENS=512
