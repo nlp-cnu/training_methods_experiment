@@ -73,18 +73,21 @@ def run_experiment_1():
             for index, train_test in enumerate(folds):
                 # get train, validation, test data for this fold
                 train_index, test_index = train_test
-                train_data = np.array(data.data)[train_index]
-                test_data = np.array(data.data)[test_index]
+                train_data = []
                 train_labels = []
                 for sample_index in train_index:
+                    train_data.append(data.data[sample_index])
                     train_labels.append(data.labels[sample_index])
+                test_data = []
                 test_labels = []
                 for sample_index in test_index:
+                    test_data.append(data.data[sample_index])
                     test_labels.append(data.labels[sample_index])
-                #test_labels = data.labels[test_index]
 
                 # get validation split
-                train_data_, val_data, train_labels_, val_labels = train_test_split(train_data, train_labels, test_size=VALIDATION_SIZE, random_state=SEED, shuffle=True)
+                train_data_, val_data, train_labels_, val_labels = train_test_split(train_data, train_labels,
+                                                                                    test_size=VALIDATION_SIZE,
+                                                                                    random_state=SEED, shuffle=True)
 
                 # create and train the classifier with or without partial unfreezing
                 classifier = MultiClass_Token_Classifier(language_model, num_classes, max_num_tokens=max_num_tokens)

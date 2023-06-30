@@ -32,7 +32,7 @@ class DataHandler(tf.keras.utils.Sequence):
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
         #Tokenize the input
-        tokenized = self._tokenizer(batch_x, padding=True, truncation=True, max_length=self._max_length, return_tensors='tf')
+        tokenized = self.tokenizer(batch_x, padding=True, truncation=True, max_length=self.max_num_tokens, return_tensors='tf')
 
         #trim the y_labels to be the max length of the batch
         num_samples = tokenized['input_ids'].shape[0]
