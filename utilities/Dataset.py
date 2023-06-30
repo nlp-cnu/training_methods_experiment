@@ -67,9 +67,9 @@ class Token_Classification_Dataset:
     def preprocess(self, input_file):
         # Want to grab the training data, expand all the labels using the tokenizer
         # Creates new label that accounts for the tokenization of a sample
-        def tokenize_sample(sample):
+        def tokenize_sample(df_sample):
             # get a list containing space separated tokens
-            tokens = sample['text'].split(' ')
+            tokens = df_sample['text'].split(' ')
 
             # get the length of each token
             token_lengths = []
@@ -84,7 +84,7 @@ class Token_Classification_Dataset:
             # add a 0 label for the [CLS] token
             new_labels.append(0)
             # extend each label to the number of tokens in that space separated "word"
-            labels = sample['annotation']
+            labels = df_sample['annotation']
             for i in range(len(labels)):
                 # add the new labels
                 labels_for_this_word = [labels[i]] * token_lengths[i]
@@ -99,7 +99,8 @@ class Token_Classification_Dataset:
             #else:
             #    print("MATCHED")
 
-            return new_labels
+            df_sample['annotation'] = new_labels
+            return df_sample
 
         # assumes classes are encoded as a real number, so a single annotation per class
         df = pd.read_csv(input_file, delimiter='\t', header=None, names=['text', 'annotation'], keep_default_na=False,
@@ -129,7 +130,7 @@ class Token_Classification_Dataset:
         # expand the annotations to match the tokens (a word may be multiple tokens)
         df = df.apply(tokenize_sample, axis=1)
 
-        # See if you can just return this new dataframe, instead of saving all of this extra data
+        # return the processed dataframe
         return df
 
     def get_folds(self, k):
