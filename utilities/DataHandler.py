@@ -43,7 +43,7 @@ class DataHandler(tf.keras.utils.Sequence):
             num_tokens = sample.shape[0]\
 
             # crop the labels if necessary
-            if sample.shape[1] >= self.max_num_tokens:
+            if sample.shape[0] >= self.max_num_tokens:
                 sample = sample[:self.max_num_tokens, :]
 
             extended_batch_y[i, :num_tokens, :] = sample[:, :]

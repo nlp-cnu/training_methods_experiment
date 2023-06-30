@@ -92,7 +92,7 @@ def run_experiment_3a():
                                                validation_data=(inter_val_data, inter_val_labels),
                                                csv_log_file=inter_val_csv_log_file,
                                                early_stop_patience=EARLY_STOPPING_PATIENCE,
-                                               restore_best_weights=True)
+                                               restore_best_weights=True, epochs=2) #TODO - restore to more than 1 epoch))
 
                     # train the whole network
                     inter_classifier.language_model.trainable = True
@@ -102,7 +102,7 @@ def run_experiment_3a():
                                            validation_data=(inter_val_data, inter_val_labels),
                                            csv_log_file=inter_val_csv_log_file,
                                            early_stop_patience=EARLY_STOPPING_PATIENCE,
-                                           restore_best_weights=True)
+                                           restore_best_weights=True, epochs=2) #TODO - restore to more than 1 epoch))
 
                     # Saving the mode
                     inter_classifier.save_language_model(inter_lm_loc)
@@ -134,14 +134,14 @@ def run_experiment_3a():
                     classifier.language_model.trainable = False
                     classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels),
                                      csv_log_file=val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE,
-                                     restore_best_weights=True)
+                                     restore_best_weights=True, epochs=2) #TODO - restore to more than 1 epoch))
 
                 # train the whole network
                 classifier.language_model.trainable = True
                 val_csv_log_file = os.path.join(test_results_path, f"{target_dataset_name}_{language_model_name}_validation_{index}_pass{intermediate_training_pass}.csv")
                 classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels),
                                  csv_log_file=val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE,
-                                 restore_best_weights=True)
+                                 restore_best_weights=True, epochs=2) #TODO - restore to more than 1 epoch))
 
                 # get the test set predictions
                 predictions.append(classifier.predict(test_data))
@@ -241,7 +241,7 @@ def run_experiment_3a():
                     macro_f1 = macro_averaged_stats["f1-score"]
                     pred_macro_f1s.append(macro_f1)
 
-            
+
             # Writing the reported metrics to file
             micro_precision_av = np.mean(pred_micro_precisions)
             micro_precision_std = np.std(pred_micro_precisions)

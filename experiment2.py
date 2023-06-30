@@ -142,7 +142,7 @@ def run_experiment_2():
                 classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels),
                                  csv_log_file=val_csv_log_file,
                                  early_stop_patience=EARLY_STOPPING_PATIENCE,
-                                 restore_best_weights=True)
+                                 restore_best_weights=True, epochs=2) #TODO - restore to more than 1 epoch))
 
             # train the whole network
             classifier.language_model.trainable = True
@@ -151,7 +151,7 @@ def run_experiment_2():
             classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels),
                              csv_log_file=val_csv_log_file,
                              early_stop_patience=EARLY_STOPPING_PATIENCE,
-                             restore_best_weights=True)
+                             restore_best_weights=True, epochs=2) #TODO - restore to more than 1 epoch))
 
             # get the test set predictions
             predictions.append(classifier.predict(test_data))
@@ -212,7 +212,6 @@ def run_experiment_2():
         macro_f1_av = np.mean(pred_macro_f1s)
         macro_f1_std = np.std(pred_macro_f1s)
 
-        # f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\n")
         with open(final_results_file, "a+") as f:
             # write results for averaged performance
             f.write(
