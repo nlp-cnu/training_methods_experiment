@@ -106,14 +106,14 @@ def run_experiment_1():
                     classifier.language_model.trainable = False
                     classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels),
                                                           csv_log_file=val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE,
-                                                          restore_best_weights=True, epochs=2) #TODO - restore to more than 1 epoch)
+                                                          restore_best_weights=True, epochs=1) #TODO - restore to more than 1 epoch)
 
                 # train the whole network
                 classifier.language_model.trainable = True
                 val_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_validation_{index}.csv")
                 classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels),
                                                       csv_log_file=val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE,
-                                                      restore_best_weights=True, epochs=2) #TODO - restore to more than 1 epoch)
+                                                      restore_best_weights=True, epochs=1) #TODO - restore to more than 1 epoch)
                     
                 # get the test set predictions
                 predictions.append(classifier.predict(test_data))
@@ -124,70 +124,9 @@ def run_experiment_1():
                 gc.collect()
                 del classifier
 
-            ## collect statistics from cross-validation
-            pred_micro_precisions = []
-            pred_macro_precisions = []
-            pred_micro_recalls = []
-            pred_macro_recalls = []
-            pred_micro_f1s = []
-            pred_macro_f1s = []
-
-            # For each fold there is a y_true and y_pred
-            for p, g in zip(predictions, golds):
-
-                # get the class names
-                class_names = list(class_map)
-                binary_task = len(class_map) == 2
-                if binary_task:
-                    class_names = list(class_map[1:])
-
-                # get statistics
-                micro_averaged_stats, macro_averaged_stats = evaluate_predictions(p, g, class_names)
-
-                #record statistics
-                micro_precision = micro_averaged_stats["precision"]
-                pred_micro_precisions.append(micro_precision)
-                micro_recall = micro_averaged_stats["recall"]
-                pred_micro_recalls.append(micro_recall)
-                micro_f1 = micro_averaged_stats["f1-score"]
-                pred_micro_f1s.append(micro_f1)
-
-                macro_precision = macro_averaged_stats["precision"]
-                pred_macro_precisions.append(macro_precision)
-                macro_recall = macro_averaged_stats["recall"]
-                pred_macro_recalls.append(macro_recall)
-                macro_f1 = macro_averaged_stats["f1-score"]
-                pred_macro_f1s.append(macro_f1)
-            
-            # Writing the reported metrics to file
-            micro_precision_av = np.mean(pred_micro_precisions)
-            micro_precision_std = np.std(pred_micro_precisions)
-            micro_recall_av = np.mean(pred_micro_recalls)
-            micro_recall_std = np.std(pred_micro_recalls)
-            micro_f1_av = np.mean(pred_micro_f1s)
-            micro_f1_std = np.std(pred_micro_f1s)
-
-            macro_precision_av = np.mean(pred_macro_precisions)
-            macro_precision_std = np.std(pred_macro_precisions)
-            macro_recall_av = np.mean(pred_macro_recalls)
-            macro_recall_std = np.std(pred_macro_recalls)
-            macro_f1_av = np.mean(pred_macro_f1s)
-            macro_f1_std = np.std(pred_macro_f1s)
-
-            with open(final_results_file, "a+") as f:
-                # write results for averaged performance
-                f.write(f"{dataset_name}\t{language_model_name}\t{micro_precision_av}\t{micro_precision_std}\t{micro_recall_av}\t{micro_recall_std}\t{micro_f1_av}\t{micro_f1_std}\t{macro_precision_av}\t{macro_precision_std}\t{macro_recall_av}\t{macro_recall_std}\t{macro_f1_av}\t{macro_f1_std}\t")
-
-                # and write the stats per fold (so statistical significance can be computed
-                f.write('\t'.join(str(num) for num in pred_micro_precisions) + "\t")
-                f.write('\t'.join(str(num) for num in pred_micro_recalls) + "\t")
-                f.write('\t'.join(str(num) for num in pred_micro_f1s) + "\t")
-
-                f.write('\t'.join(str(num) for num in pred_macro_precisions) + "\t")
-                f.write('\t'.join(str(num) for num in pred_macro_recalls) + "\t")
-                f.write('\t'.join(str(num) for num in pred_macro_f1s))
-
-                f.write("\n")
+            ## 3. OUTPUT CROSS-VALIDATION RESULTS FOR THIS LANGUAGE MODEL AND DATASET
+            collect_and_output_results(predictions, golds, class_map, final_results_file, dataset_name,
+                                       language_model_name)
 
         
 if __name__ == "__main__":

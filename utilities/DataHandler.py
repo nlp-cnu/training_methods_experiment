@@ -36,8 +36,8 @@ class DataHandler(tf.keras.utils.Sequence):
 
         #trim the y_labels to be the max length of the batch
         num_samples = tokenized['input_ids'].shape[0]
-        num_batch_tokens = tokenized['input_ids'].shape[1]
-        extended_batch_y = np.zeros([num_samples, num_batch_tokens, self.num_classes])
+        max_tokens_in_batch = tokenized['input_ids'].shape[1]
+        extended_batch_y = np.zeros([num_samples, max_tokens_in_batch, self.num_classes])
         for i, sample in enumerate(batch_y):
             # The sample is a num_tokens x num_labels matrix
             num_tokens = sample.shape[0]\
