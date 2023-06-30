@@ -13,6 +13,12 @@ from data.bc7dcpi.conversion_script.convert import convert_DCPI
 from data.cometa.conversion_script.convert import convert_cometa
 from data.nlmchem.conversion_script.convert import convert_NLM
 
+from data.combined_datasets.n2c2_inter.collect_dataset import combine_for_n2c2
+from data.combined_datasets.ncbi_inter.collect_dataset import combine_for_ncbi
+from data.combined_datasets.bc7med_inter.collect_dataset import combine_for_bc7med
+from data.combined_datasets.nlmchem_inter.collect_dataset import combine_for_nlmchem
+from data.combined_datasets.ademiner_inter.collect_dataset import combine_for_ademiner
+
 from utilities.constants import *
 
 def convert_all():
@@ -42,7 +48,22 @@ def create_minis():
         mini_df = df.sample(20)
         mini_df.to_csv(mini_data_file, sep='\t', header=None, index=False)
 
+def create_combined():
+
+    conversion_dict = {ADEMINER_INTER_DATA: combine_for_ademiner,
+                       BC7MED_INTER_DATA: combine_for_bc7med,
+                       NLMCHEM_INTER_DATA: combine_for_nlmchem,
+                       NCBI_INTER_DATA: combine_for_ncbi,
+                       N2C2_INTER_DATA: combine_for_n2c2}
+    home_dir = os.getcwd()
+
+    for directory in EXP3B_INTER:
+        print(f"Combining for {directory.split(os.sep)[-1]}")
+        os.chdir(os.path.join(home_dir, directory))
+        conversion_dict[directory]()
+        os.chdir(home_dir)
 
 if __name__ == "__main__":
     convert_all()
     #create_minis()
+    create_combined()

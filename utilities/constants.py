@@ -27,17 +27,17 @@ COMETA_DATA = os.path.join("data", "cometa")
 
 ADEMINER_DATA = os.path.join("data", "ademiner")
 
-ALL_DATASETS = [ONTO_DATA, I2B2_DATA, N2C2_DATA, BC5CDR_DATA, DCPI_DATA, NLMCHEM_DATA, NCBI_DATA, BC7MED_DATA, COMETA_DATA, ADEMINER_DATA]
-#ALL_DATASETS = [ONTO_DATA, I2B2_DATA, ADEMINER_DATA] #TODO - restore to all
+#ALL_DATASETS = [ONTO_DATA, I2B2_DATA, N2C2_DATA, BC5CDR_DATA, DCPI_DATA, NLMCHEM_DATA, NCBI_DATA, BC7MED_DATA, COMETA_DATA, ADEMINER_DATA]
+ALL_DATASETS = [ONTO_DATA, DCPI_DATA, ADEMINER_DATA] #TODO - restore to all
 
 DOMAIN_SPECIFIC_DATASETS = ALL_DATASETS[1:]
 EXP3B_TARGETS = [ADEMINER_DATA, BC7MED_DATA, NLMCHEM_DATA, NCBI_DATA, N2C2_DATA]
 
-NLMCHEM_INTER_DATA = os.path.join("data", "nlmchem_inter")
-NCBI_INTER_DATA = os.path.join("data", "ncbi_inter")
-N2C2_INTER_DATA = os.path.join("data", "n2c2_inter")
-ADEMINER_INTER_DATA = os.path.join("data", "ademiner_inter")
-BC7MED_INTER_DATA = os.path.join("data", "bc7med_inter")
+NLMCHEM_INTER_DATA = os.path.join("data", "combined_datasets", "nlmchem_inter")
+NCBI_INTER_DATA = os.path.join("data", "combined_datasets", "ncbi_inter")
+N2C2_INTER_DATA = os.path.join("data", "combined_datasets", "n2c2_inter")
+ADEMINER_INTER_DATA = os.path.join("data", "combined_datasets", "ademiner_inter")
+BC7MED_INTER_DATA = os.path.join("data", "combined_datasets", "bc7med_inter")
 EXP3B_INTER = [ADEMINER_INTER_DATA, BC7MED_INTER_DATA, NLMCHEM_INTER_DATA, NCBI_INTER_DATA, N2C2_INTER_DATA]
 
 RESULTS_DIR_PATH = "results"
