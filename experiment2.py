@@ -54,31 +54,42 @@ def run_experiment_2():
         language_model_name = language_model.split(os.sep)[-1]
         print("\tLanguage model:" + language_model_name)
 
-        # load the training dataset and split into folds
+        # set up output paths
         training_file_path = os.path.join(dataset_path, CONVERTED_DATASET_FILE)
-        test_results_path = os.path.join(RESULTS_DIR_PATH, EXPERIMENT_2_RESULTS)
+        test_results_path = os.path.join(RESULTS_DIR_PATH, EXPERIMENT_1_RESULTS)
         Path(test_results_path).mkdir(parents=True, exist_ok=True)
-        data = Token_Classification_Dataset(training_file_path, num_classes, language_model, seed=SEED)
-        folds = list(data.get_folds(NUM_FOLDS))
 
-        predictions = []
-        golds = []
+        # create the tokenizer - it must be consistent across classifier and dataset
+        tokenizer_name = language_model_name
+        if 'bertweet' in language_model:
+            tokenizer_name = 'vinai/bertweet-base'
+        tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
 
-        # Train on onto data and save language model before CV
+
+        # set the max_num_tokens
+        # bertweet has a max_num_tokens of 128, all others are MAX_NUM_TOKENS=512
+        if 'bertweet' in language_model:
+            max_num_tokens = 128
+        else:
+            max_num_tokens = MAX_NUM_TOKENS
+
+
+        ## FIRST - TRAIN ON ONTO DATA AND SAVE LANGUAGE MODEL
         persistent_language_model = language_model  # Tracking to get right tokenizer
         onto_class_map = DATASET_TO_CLASS_MAP[ONTO_DATA.split(os.sep)[-1]]
         onto_num_classes = len(onto_class_map)
 
         # load the onto data
         onto_file_path = os.path.join(ONTO_DATA, CONVERTED_DATASET_FILE)
-        onto_data = Token_Classification_Dataset(onto_file_path, onto_num_classes, language_model, seed=SEED)
+        onto_data = Token_Classification_Dataset(onto_file_path, onto_num_classes, tokenizer, seed=SEED,
+                                                 max_num_tokens=max_num_tokens)
         onto_train_data = onto_data.data
         onto_train_labels = onto_data.labels
         onto_train_data, onto_val_data, onto_train_labels, onto_val_labels = train_test_split(onto_train_data, onto_train_labels,
-                                                                                              test_size=VALIDATION_SIZE, random_state=SEED, shuffle=True)
-
-        # Train the classifier with onto data
-        onto_classifier = MultiClass_Token_Classifier(language_model, onto_num_classes)
+                                                                                              test_size=VALIDATION_SIZE,
+                                                                                              random_state=SEED, shuffle=True)
+        # Crate and train the classifier on the onto data
+        onto_classifier = MultiClass_Token_Classifier(language_model, onto_num_classes, tokenizer, max_num_tokens)
         if PARTIAL_UNFREEZING:
             print("Training the onto-Decoder only")
             # train the decoder
@@ -86,20 +97,28 @@ def run_experiment_2():
             onto_val_csv_log_file = os.path.join(test_results_path, f"ONTO_{language_model_name}_validation_decoder.csv")
             onto_classifier.train(onto_train_data, onto_train_labels, validation_data=(onto_val_data, onto_val_labels),
                                   csv_log_file=onto_val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE,
-                                  restore_best_weights=True)
-
+                                  restore_best_weights=True, epochs=2) #TODO - restore to more than 1 epoch)
         # train the whole network
         onto_classifier.language_model.trainable = True
         onto_val_csv_log_file = os.path.join(test_results_path, f"ONTO_{language_model_name}_validation.csv")
         onto_classifier.train(onto_train_data, onto_train_labels, validation_data=(onto_val_data, onto_val_labels),
                               csv_log_file=onto_val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE,
-                              restore_best_weights=True)
+                              restore_best_weights=True, epochs=2) #TODO - restore to more than 1 epoch)
 
-        # Saving the mode
+        # Save the decoder (language model) weights
         onto_lm_loc = os.path.join("..", "models", f"{language_model_name}_ONTO")
         onto_classifier.save_language_model(onto_lm_loc)
 
-        # perform cross validation
+
+        ## SECOND - PERFORM CROSS-VALIDATION
+        # load the training data and split into folds
+        data = Token_Classification_Dataset(training_file_path, num_classes, tokenizer, seed=SEED,
+                                            max_num_tokens=max_num_tokens)
+        folds = list(data.get_folds(NUM_FOLDS))
+
+        # loop through each fold and collect results
+        predictions = []
+        golds = []
         for index, train_test in enumerate(folds):
             # split the data into train, validation, and test sets
             train_index, test_index = train_test
@@ -109,10 +128,11 @@ def run_experiment_2():
             test_labels = np.array(data.labels)[test_index]
 
             train_data_, val_data, train_labels_, val_labels = train_test_split(train_data, train_labels,
-                                                                                test_size=VALIDATION_SIZE, random_state=SEED, shuffle=True)
+                                                                                test_size=VALIDATION_SIZE,
+                                                                                random_state=SEED, shuffle=True)
 
             # create and train the classifier with or without partial unfreezing
-            classifier = MultiClass_Token_Classifier(onto_lm_loc, num_classes, tokenizer=persistent_language_model)
+            classifier = MultiClass_Token_Classifier(onto_lm_loc, num_classes, tokenizer, max_num_tokens)
             if PARTIAL_UNFREEZING:
                 print("Training the decoder only")
                 # train the decoder

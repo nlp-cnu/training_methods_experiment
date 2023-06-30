@@ -22,21 +22,11 @@ class MultiClass_Token_Classifier:
     This constructor creates the model and compiles it for training
     """
 
-    def __init__(self, language_model_name, num_classes, tokenizer=None, max_num_tokens=MAX_NUM_TOKENS):
+    def __init__(self, language_model_name, num_classes, tokenizer, max_num_tokens):
         self.language_model_name = language_model_name
         self.max_num_tokens = max_num_tokens
         self.num_classes = num_classes
-
-        # create the tokenizer
-        if tokenizer is None:
-            # You may need to do this for more updated transformer versions (transformers v4.x+:)
-            # if 'bertweet' in self.language_model_name:
-            #    self.tokenizer = AutoTokenizer.from_pretrained(self.language_model_name, use_fast=False)
-            # else:
-            self.tokenizer = AutoTokenizer.from_pretrained(self.language_model_name)
-
-        else:
-            self.tokenizer = AutoTokenizer.from_pretrained(tokenizer)
+        self.tokenizer = tokenizer
 
         # create the language model
         if os.path.isdir(language_model_name):
