@@ -90,13 +90,13 @@ def run_experiment_3b():
                                    validation_data=(inter_val_data, inter_val_labels),
                                    csv_log_file=inter_val_csv_log_file,
                                    early_stop_patience=EARLY_STOPPING_PATIENCE,
-                                   restore_best_weights=True, epochs=1) #TODO - restore to more than 1 epoch)
+                                   restore_best_weights=True)
 
         inter_classifier.language_model.trainable = True
         inter_val_csv_log_file = os.path.join(test_results_path, f"INTER_{language_model_name}_validation.csv")
         inter_classifier.train(inter_train_data, inter_train_labels, validation_data=(inter_val_data, inter_val_labels),
                                csv_log_file=inter_val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE,
-                               restore_best_weights=True, epochs=1) #TODO - restore to more than 1 epoch)
+                               restore_best_weights=True)
 
         # save the model
         inter_lm_loc = os.path.join("..", "models", f"{language_model_name}_INTER")
@@ -141,13 +141,13 @@ def run_experiment_3b():
                                        validation_data=(inter_val_data, inter_val_labels),
                                        csv_log_file=inter_val_csv_log_file,
                                        early_stop_patience=EARLY_STOPPING_PATIENCE,
-                                       restore_best_weights=True, epochs=1) #TODO - restore to more than 1 epoch)
+                                       restore_best_weights=True)
 
             # train the full network
             classifier.language_model.trainable = True
             val_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_validation_{index}.csv")
             classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels), csv_log_file=val_csv_log_file,
-                             early_stop_patience=EARLY_STOPPING_PATIENCE, restore_best_weights=True, epochs=1) #TODO - restore to more than 1 epoch)
+                             early_stop_patience=EARLY_STOPPING_PATIENCE, restore_best_weights=True)
 
             # get the test set predictions
             predictions.append(classifier.predict(test_data))

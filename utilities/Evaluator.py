@@ -114,6 +114,9 @@ def evaluate_predictions(pred_y, true_y, class_names):
     # remove 'None' from class_names
     class_names = class_names[1:]
 
+    # account for 0s which will result in division by 0
+    if tp[tp == 0] += 1e-10
+    
     # calculate precision, recall, and f1 for each class
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)
@@ -129,6 +132,7 @@ def evaluate_predictions(pred_y, true_y, class_names):
     all_fn = np.sum(fn)
     micro_precision = all_tp / (all_tp + all_fp)
     micro_recall = all_tp / (all_tp + all_fn)
+
     micro_f1 = (2 * micro_precision * micro_recall) / (micro_precision + micro_recall)
 
     micro_averaged_stats = {'precision': micro_precision, 'recall': micro_recall, 'f1': micro_f1}
