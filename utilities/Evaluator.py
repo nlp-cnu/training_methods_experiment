@@ -16,8 +16,8 @@ def evaluate_predictions(pred_y, true_y, class_names):
     binary_classification = False
     if len(class_names) == 1:
         binary_classification = True
-        class_names = ['none'] + class_names
-
+        pred_y = np.round(pred_y)
+        
     # grab dimensions
     num_lines = pred_y.shape[0]
     padded_token_length = pred_y.shape[1]
@@ -110,11 +110,10 @@ def evaluate_predictions(pred_y, true_y, class_names):
         tp = np.array(tp)[1:]
         fp = np.array(fp)[1:]
         fn = np.array(fn)[1:]
-
-    # remove 'None' from class_names
-    class_names = class_names[1:]
+        class_names = class_names[1:]
 
     # account for 0s which will result in division by 0
+    tp = tp.astype(float)
     tp[tp == 0] += 1e-10
     
     # calculate precision, recall, and f1 for each class
@@ -137,7 +136,7 @@ def evaluate_predictions(pred_y, true_y, class_names):
 
     micro_averaged_stats = {'precision': micro_precision, 'recall': micro_recall, 'f1': micro_f1}
     macro_avareged_stats = {'precision': macro_precision, 'recall': macro_recall, 'f1': macro_f1}
-
+    
     return micro_averaged_stats, macro_avareged_stats
 
 
@@ -150,11 +149,11 @@ def collect_and_output_results(predictions, golds, class_map, final_results_file
     pred_macro_f1s = []
 
     # TODO _ DELETE THIS PICKLE PORTION --- BUT USEFUL FOR DEBUGGING
-    import pickle
-    with open('temp_pred_file.pkl', 'wb') as file:
-        pickle.dump(predictions, file)
-    with open('temp_gold_file.pkl', 'wb') as file:
-        pickle.dump(golds, file)
+    #import pickle
+    #with open('temp_pred_file.pkl', 'wb') as file:
+    #    pickle.dump(predictions, file)
+    #with open('temp_gold_file.pkl', 'wb') as file:
+    #    pickle.dump(golds, file)
     #with open('temp_pred_file.pkl', 'rb') as file:
     #    predictions = pickle.load(file)
     #with open('temp_gold_file.pkl', 'rb') as file:
@@ -217,3 +216,15 @@ def collect_and_output_results(predictions, golds, class_map, final_results_file
         f.write('\t'.join(str(num) for num in pred_macro_f1s))
 
         f.write("\n")
+
+
+
+
+#from constants import *
+#predictions = []
+#golds = []
+#class_map = ADEMINER_CLASS_MAP
+#final_results_file = ''
+#dataset_name = 'tmp'
+#language_model_name = BASE_BERT
+#collect_and_output_results(predictions, golds, class_map, final_results_file, dataset_name, language_model_name)

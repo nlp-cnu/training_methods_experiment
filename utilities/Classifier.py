@@ -48,7 +48,7 @@ class MultiClass_Token_Classifier:
         embeddings = self.language_model(input_ids=input_ids, attention_mask=input_padding_mask)[0]
 
         # create the output layer
-        if num_classes == 1: # binary
+        if self.num_classes == 1: # binary
             activation = 'sigmoid'
             loss_function = 'binary_crossentropy'
         else: # multi-label
@@ -61,11 +61,17 @@ class MultiClass_Token_Classifier:
 
         self.model = Model(inputs=[input_ids, input_padding_mask], outputs=[final_output])
         optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
-        metrics = [self.micro_f1, self.macro_f1]
+
+        # set up the metrics
+        if self.num_classes == 1: #binary
+            metrics = [self.micro_f1_binary_multilabel, self.macro_f1_binary_multilabel]
+        else: #multilabel
+            metrics = [self.micro_f1_multiclass, self.macro_f1_multiclass]
+
         self.model.compile(
             optimizer=optimizer,
-            loss=CATEGORICAL_CROSSENTROPY,
-            metrics=[self.micro_f1, self.macro_f1]
+            loss=loss_function,
+            metrics=metrics
         )
 
     def train(self, x, y, batch_size=BATCH_SIZE, validation_data=None, epochs=MAX_EPOCHS, csv_log_file=None,
@@ -134,7 +140,157 @@ class MultiClass_Token_Classifier:
     def save_language_model(self, directory_path):
         self.language_model.save_pretrained(directory_path)
 
-    def class_precision(self, y_true, y_pred, class_num):
+
+    ##########
+    ### Multiclass Metrics (excludes the 0th = None class)
+    # range starts at 1 because we don't want to include the None Class
+    def macro_f1_multiclass(self, y_true, y_pred):
+        return K.sum([self.class_f1_multiclass(y_true, y_pred, i) for i in range(1, self.num_classes)]) / self.num_classes
+
+    def micro_f1_multiclass(self, y_true, y_pred):
+        precision = self.micro_precision_multiclass(y_true, y_pred)
+        recall = self.micro_recall_multiclass(y_true, y_pred)
+        return 2 * ((precision * recall) / (precision + recall + K.epsilon()))
+    
+    # 1: to exclude the none class
+    def micro_recall_multiclass(self, y_true, y_pred):
+        #true_positives = K.sum(K.round(K.clip(y_true[1:] * y_pred[1:], 0, 1)))
+        #possible_positives = K.sum(K.round(K.clip(y_true[1:], 0, 1)))
+        #old_recall = true_positives / (possible_positives + K.epsilon())
+        #true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+        #possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+        #old_recall = true_positives / (possible_positives + K.epsilon())
+        #return recall
+
+        predictions = K.argmax(y_pred)
+        golds = K.argmax(y_true)
+
+        # true negatives are correctly predicted as None ()
+        #tn = K.sum(predictions == 0 and golds == 0)
+        #tn = K.sum(tf.cast(predictions == 0, tf.int32) * tf.cast(golds == 0, tf.int32))
+
+        # predicted as anything but the correct class (since it was missed for that class) for classes that aren't None (0) only
+        #fn = K.sum(predictions != golds and golds != 0)
+        fn = K.sum(tf.cast(predictions != golds, tf.float32) * tf.cast(golds != 0, tf.float32))
+        
+        # true positive are the correctly predicted class but excluding the None (0) class
+        #tp = K.sum(predictions == golds and predictions != 0)
+        tp = K.sum(tf.cast(predictions == golds, tf.float32) * tf.cast(predictions != 0, tf.float32))
+               
+        # predicted as anything but the correct class (since it was predicted as some other class), but not predicted as None (0) 
+        #fp = K.sum(predictions != golds and predictions != 0)
+        #fp = K.sum(tf.cast(predictions != golds, tf.int32) * tf.cast(predictions != 0, tf.int32))
+
+        recall = tp / (tp + fn + K.epsilon())
+        return recall        
+    
+    
+    #1: to exlcude the none class --- this definately includes the none class now
+    def micro_precision_multiclass(self, y_true, y_pred):
+        #true_positives = K.sum(K.round(K.clip(y_true[1:] * y_pred[1:], 0, 1)))
+        #predicted_positives = K.sum(K.round(K.clip(y_pred[1:], 0, 1)))
+        #old_precision = true_positives / (predicted_positives + K.epsilon())
+        #return precision
+        
+        predictions = K.argmax(y_pred)
+        golds = K.argmax(y_true)
+
+        # true negatives are correctly predicted as None ()
+        #tn = K.sum(predictions == 0 and golds == 0)
+        #tn = K.sum(tf.cast(predictions == 0, tf.int32) * tf.cast(golds == 0, tf.int32))
+
+        # predicted as anything but the correct class (since it was missed for that class) for classes that aren't None (0) only
+        #fn = K.sum(predictions != golds and golds != 0)
+        #fn = K.sum(tf.cast(predictions != golds, tf.int32) * tf.cast(golds != 0, tf.int32))
+        
+        # true positive are the correctly predicted class but excluding the None (0) class
+        #tp = K.sum(predictions == golds and predictions != 0)
+        tp = K.sum(tf.cast(predictions == golds, tf.float32) * tf.cast(predictions != 0, tf.float32))
+               
+        # predicted as anything but the correct class (since it was predicted as some other class), but not predicted as None (0) 
+        #fp = K.sum(predictions != golds and predictions != 0)
+        fp = K.sum(tf.cast(predictions != golds, tf.float32) * tf.cast(predictions != 0, tf.float32))
+
+        precision = tp / (tp + fp + K.epsilon())
+        return precision    
+
+
+    def class_precision_multiclass(self, y_true, y_pred, class_num):
+        predictions = K.argmax(y_pred)
+        golds = K.argmax(y_true)
+
+        # true positive are when predicted = gold (for the class_num)
+        #tp = K.sum(predictions == golds and gold == class_num)
+        tp = K.sum(tf.cast(predictions == golds, tf.float32) * tf.cast(golds == class_num, tf.float32))
+               
+        # false positives are when things are predicted as this class that aren't
+        #fp = K.sum(predictions != golds and predictions == class_num)
+        fp = K.sum(tf.cast(predictions != golds, tf.float32) * tf.cast(predictions == class_num, tf.float32))
+
+        precision = tp / (tp + fp + K.epsilon())
+        return precision
+        
+    
+    def class_recall_multiclass(self, y_true, y_pred, class_num):
+        predictions = K.argmax(y_pred)
+        golds = K.argmax(y_true)
+
+        # true positive are when predicted = gold (for the class_num)
+        #tp = K.sum(predictions == golds and gold == class_num)
+        tp = K.sum(tf.cast(predictions == golds, tf.float32) * tf.cast(golds == class_num, tf.float32))
+        
+        # a sample of class_num that wasn't classified as class_num
+        #fn = K.sum(predictions != golds and golds == class_num)
+        fn = K.sum(tf.cast(predictions != golds, tf.float32) * tf.cast(golds == class_num, tf.float32))
+                      
+        recall = tp / (tp + fn + K.epsilon())
+        return recall
+
+
+    def class_f1_multiclass(self, y_true, y_pred, class_num):
+        precision = self.class_precision_multiclass(y_true, y_pred, class_num)
+        recall = self.class_recall_multiclass(y_true, y_pred, class_num)
+        return 2 * ((precision * recall) / (precision + recall + K.epsilon()))
+
+
+    
+
+    #########
+    ### Binary/multilabel metrics (includes the 0th class)
+    def macro_f1_binary_multilabel(self, y_true, y_pred):
+        #for i in range(self.num_classes):
+        #    tf.print(y_true)
+        #    tf.print(y_pred)
+        #    tf.print("i = ")
+        #    tf.print(i)
+        #    tf.print("class_f1 = ")
+        #    tf.print(self.class_f1_binary_multilabel(y_true, y_pred,i))
+        #    tf.print("")
+        #    tf.print(self.num_classes)
+        #    tf.print(K.sum([self.class_f1_binary_multilabel(y_true, y_pred, i) for i in range(self.num_classes)]) / self.num_classes)
+        #    tf.print(K.sum([self.class_f1_binary_multilabel(y_true, y_pred, 0)]))
+        #    tf.print("")
+        
+        return K.sum([self.class_f1_binary_multilabel(y_true, y_pred, i) for i in range(self.num_classes)]) / self.num_classes
+
+    def micro_f1_binary_multilabel(self, y_true, y_pred):
+        precision = self.micro_precision_binary_multilabel(y_true, y_pred)
+        recall = self.micro_recall_binary_multilabel(y_true, y_pred)
+        return 2 * ((precision * recall) / (precision + recall + K.epsilon()))
+    
+    def micro_recall_binary_multilabel(self, y_true, y_pred):
+        true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+        possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+        recall = true_positives / (possible_positives + K.epsilon())
+        return recall
+    
+    def micro_precision_binary_multilabel(self, y_true, y_pred):
+        true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+        predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+        precision = true_positives / (predicted_positives + K.epsilon())
+        return precision
+
+    def class_precision_binary_multilabel(self, y_true, y_pred, class_num):
         class_y_true = tf.gather(y_true, [class_num], axis=1)
         class_y_pred = tf.gather(y_pred, [class_num], axis=1)
         true_positives = K.sum(K.round(K.clip(class_y_true * class_y_pred, 0, 1)))
@@ -142,7 +298,7 @@ class MultiClass_Token_Classifier:
         precision = true_positives / (predicted_positives + K.epsilon())
         return precision
 
-    def class_recall(self, y_true, y_pred, class_num):
+    def class_recall_binary_multilabel(self, y_true, y_pred, class_num):
         class_y_true = tf.gather(y_true, [class_num], axis=1)
         class_y_pred = tf.gather(y_pred, [class_num], axis=1)
         true_positives = K.sum(K.round(K.clip(class_y_true * class_y_pred, 0, 1)))
@@ -150,30 +306,7 @@ class MultiClass_Token_Classifier:
         recall = true_positives / (possible_positives + K.epsilon())
         return recall
 
-    def class_f1(self, y_true, y_pred, class_num):
-        precision = self.class_precision(y_true, y_pred, class_num)
-        recall = self.class_recall(y_true, y_pred, class_num)
-        return 2 * ((precision * recall) / (precision + recall + K.epsilon()))
-
-    # range starts at 1 because we don't want to include the None Class
-    def macro_f1(self, y_true, y_pred):
-        return K.sum([self.class_f1(y_true, y_pred, i) for i in range(1, self.num_classes)]) / self.num_classes
-
-    # 1: to exclude the none class
-    def micro_recall(self, y_true, y_pred):
-        true_positives = K.sum(K.round(K.clip(y_true[1:] * y_pred[1:], 0, 1)))
-        possible_positives = K.sum(K.round(K.clip(y_true[1:], 0, 1)))
-        recall = true_positives / (possible_positives + K.epsilon())
-        return recall
-
-    #1: to exlcude the none class
-    def micro_precision(self, y_true, y_pred):
-        true_positives = K.sum(K.round(K.clip(y_true[1:] * y_pred[1:], 0, 1)))
-        predicted_positives = K.sum(K.round(K.clip(y_pred[1:], 0, 1)))
-        precision = true_positives / (predicted_positives + K.epsilon())
-        return precision
-
-    def micro_f1(self, y_true, y_pred):
-        precision = self.micro_precision(y_true, y_pred)
-        recall = self.micro_recall(y_true, y_pred)
+    def class_f1_binary_multilabel(self, y_true, y_pred, class_num):
+        precision = self.class_precision_binary_multilabel(y_true, y_pred, class_num)
+        recall = self.class_recall_binary_multilabel(y_true, y_pred, class_num)
         return 2 * ((precision * recall) / (precision + recall + K.epsilon()))
