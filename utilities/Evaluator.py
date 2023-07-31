@@ -16,7 +16,6 @@ def evaluate_predictions(pred_y, true_y, class_names):
     binary_classification = False
     if len(class_names) == 1:
         binary_classification = True
-        pred_y = np.round(pred_y)
         
     # grab dimensions
     num_lines = pred_y.shape[0]
@@ -50,15 +49,9 @@ def evaluate_predictions(pred_y, true_y, class_names):
         line_pred = pred_y[i, :num_tokens, :]
 
         # convert token classifications to categorical.
-        if binary_classification:  # multilabel or binary
-            # Argmax returns 0 if everything is 0,
-            # so, determine if classification is None class. If it's not, add 1 to the argmax
-            not_none = np.max(line_gold, axis=1) > 0
-            line_gold_categorical = np.argmax(line_gold, axis=1) + not_none
-            not_none = np.max(line_pred, axis=1) > 0
-            line_pred_categorical = np.argmax(line_pred, axis=1) + not_none
-        else:
-            line_gold_categorical = np.argmax(line_gold, axis=1)
+        if binary_classification: 
+            line_golf_categorical = np.round(line_gold)
+        else: # multiclass
             line_pred_categorical = np.argmax(line_pred, axis=1)
 
         # add to the flattened list of labels

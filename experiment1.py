@@ -114,7 +114,6 @@ def run_experiment_1():
                     
                 # get the test set predictions
                 predictions.append(classifier.predict(test_data))
-                print("predictions = ", predictions)
                 golds.append(test_labels)
 
                 # I think there are some memory leaks within keras, so do some garbage collecting
