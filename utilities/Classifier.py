@@ -65,7 +65,7 @@ class MultiClass_Token_Classifier:
         # set up the metrics
         if self.num_classes == 1: #binary
             metrics = [self.micro_f1_binary_multilabel, self.macro_f1_binary_multilabel]
-        else: #multilabel
+        else: #multiclass
             metrics = [self.micro_f1_multiclass, self.macro_f1_multiclass]
 
         self.model.compile(
@@ -97,6 +97,11 @@ class MultiClass_Token_Classifier:
             callbacks.append(csv_logger)
 
         if early_stop_patience:
+            if self.num_classes == 1:
+                metric_to_monitor='val_micro_f1_binary_multilabel'
+            else:
+                metric_to_monitor='val_micro_f1_multiclass'
+                
             early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_micro_f1', patience=early_stop_patience,
                                                           mode='max',
                                                           restore_best_weights=restore_best_weights)  # , restore_best_weights) <== auto tracks model weights with best scores
