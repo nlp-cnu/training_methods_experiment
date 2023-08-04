@@ -49,13 +49,13 @@ def evaluate_predictions(pred_y, true_y, class_names):
         line_pred = pred_y[i, :num_tokens, :]
 
         # convert token classifications to categorical.
-        if binary_classification: 
-            line_gold_categorical = np.round(line_gold)
-            line_pred_categorical = np.round(line_pred)
+        if binary_classification:
+            line_gold_categorical = line_gold[:,0]
+            line_pred_categorical = np.round(line_pred)[:,0]
         else: # multiclass
-            line_gold_categorical = np.argmax(line_gold, axis=1)
             line_pred_categorical = np.argmax(line_pred, axis=1)
-
+            line_gold_categorical = np.argmax(line_gold, axis=1)
+            
         # add to the flattened list of labels
         gold_flat.extend(line_gold_categorical.tolist())
         pred_flat.extend(line_pred_categorical.tolist())
@@ -69,7 +69,7 @@ def evaluate_predictions(pred_y, true_y, class_names):
         tp.append(0)
         fp.append(0)
         fn.append(0)
-
+        
     # count the tps, fps, fns
     num_samples = len(pred_flat)
     for i in range(num_samples):
@@ -86,6 +86,7 @@ def evaluate_predictions(pred_y, true_y, class_names):
                 fn[true_index] += 1
 
         if binary_classification:
+             
             if gold_flat[i] == 1 and pred_flat[i] == 1:
                 tp[0] += 1
             elif gold_flat[i] == 0 and pred_flat[i] == 1:
@@ -215,6 +216,7 @@ def collect_and_output_results(predictions, golds, class_map, final_results_file
 
 
 
+#TODO - use this with the pkl code up top to test these functions
 #from constants import *
 #predictions = []
 #golds = []
