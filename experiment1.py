@@ -23,6 +23,7 @@ def run_experiment_1():
     final_results_file = os.path.join(RESULTS_DIR_PATH, EXPERIMENT_1_RESULTS, FINAL_RESULTS_FILE)
     if os.path.isfile(final_results_file):
         os.remove(final_results_file)
+
     # Set the header of the results file, getting macro & micro precision, recall, and f1s
     with open(final_results_file, "a+") as f:
         f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\t")
@@ -68,8 +69,10 @@ def run_experiment_1():
                 max_num_tokens = 128
             else:
                 max_num_tokens = MAX_NUM_TOKENS
+                
             data = Token_Classification_Dataset(training_file_path, num_classes, tokenizer, seed=SEED,
                                                 max_num_tokens=max_num_tokens)
+            
             folds = list(data.get_folds(NUM_FOLDS))
 
             # perform cross-validation
@@ -96,11 +99,12 @@ def run_experiment_1():
 
                 # create and train the classifier with or without partial unfreezing
                 classifier = MultiClass_Token_Classifier(language_model, num_classes, tokenizer, max_num_tokens)
+                print ("classifier created")
                 if PARTIAL_UNFREEZING:
-                    print ("Training the Decoder only")
                     # train the decoder
                     val_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_validation_decoder_{index}.csv")
                     classifier.language_model.trainable = False
+                    print ("training with partial freezing")
                     classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels),
                                                           csv_log_file=val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE,
                                                           restore_best_weights=True)
@@ -111,7 +115,8 @@ def run_experiment_1():
                 classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels),
                                                       csv_log_file=val_csv_log_file, early_stop_patience=EARLY_STOPPING_PATIENCE,
                                                       restore_best_weights=True)
-                    
+
+                
                 # get the test set predictions
                 predictions.append(classifier.predict(test_data))
                 golds.append(test_labels)

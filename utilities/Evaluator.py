@@ -50,8 +50,10 @@ def evaluate_predictions(pred_y, true_y, class_names):
 
         # convert token classifications to categorical.
         if binary_classification: 
-            line_golf_categorical = np.round(line_gold)
+            line_gold_categorical = np.round(line_gold)
+            line_pred_categorical = np.round(line_pred)
         else: # multiclass
+            line_gold_categorical = np.argmax(line_gold, axis=1)
             line_pred_categorical = np.argmax(line_pred, axis=1)
 
         # add to the flattened list of labels

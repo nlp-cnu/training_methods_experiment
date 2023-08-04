@@ -63,7 +63,7 @@ class Token_Classification_Dataset:
             self.labels.append(sample_annotations)
 
         print("Number of lost tokens due to truncation:", num_lost)
-
+        
     def preprocess(self, input_file):
         # Want to grab the training data, expand all the labels using the tokenizer
         # Creates new label that accounts for the tokenization of a sample
@@ -100,6 +100,7 @@ class Token_Classification_Dataset:
             #    print("MATCHED")
 
             df_sample['annotation'] = new_labels
+
             return df_sample
 
         # assumes classes are encoded as a real number, so a single annotation per class
@@ -115,7 +116,7 @@ class Token_Classification_Dataset:
         df['text'] = df['text'].apply(lambda x: ' '.join(re.findall(r'\b\w+\b|[^\s\w]', x)))
 
         # NOTE: This could make performance worse, but [UNK] tokens are a big problems for converting between formats
-        # replace non-ascii characters with *
+        # replace non-ascii characters with * (this doesn't take very long - tokenizing takes forever)
         #  if we just remove them then it can throw off the labels
         for i in range(len(df['text'].values)):
             text_list = list(df.iloc[i]['text'])
@@ -128,7 +129,9 @@ class Token_Classification_Dataset:
         # convert the annotation to numbers
         df['annotation'] = df['annotation'].apply(literal_eval)
         # expand the annotations to match the tokens (a word may be multiple tokens)
+        print ("TOKENIZING")
         df = df.apply(tokenize_sample, axis=1)
+        print ("DONE TOKENIZING")
 
         # return the processed dataframe
         return df
