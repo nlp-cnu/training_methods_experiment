@@ -42,7 +42,7 @@ def run_experiment_2():
 
 
     # Iterate over each dataset
-    for dataset_path, language_model in zip(DOMAIN_SPECIFIC_DATASETS[4:5], EXP1_WINNING_MODELS[4:5]):
+    for dataset_path, language_model in zip(DOMAIN_SPECIFIC_DATASETS, EXP1_WINNING_MODELS):
         if language_model == "NONE":
             continue
         dataset_name = dataset_path.split(os.sep)[-1]
