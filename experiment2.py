@@ -24,7 +24,7 @@ def run_experiment_2():
         os.remove(final_results_file)
     # Set the header of the results file, getting macro & micro precision, recall, and f1s
     with open(final_results_file, "a+") as f:
-        f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\n")
+        f.write("dataset\tlm_name\tmicro_precision_av\tmicro_precision_std\tmicro_recall_av\tmicro_recall_std\tmicro_f1_av\tmicro_f1_std\tmacro_precision_av\tmacro_precision_std\tmacro_recall_av\tmacro_recall_std\tmacro_f1_av\tmacro_f1_std\t")
 
         for i in range(1, NUM_FOLDS + 1):
             f.write("fold " + str(i) + " micro precision\t")
