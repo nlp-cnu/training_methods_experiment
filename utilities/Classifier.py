@@ -102,7 +102,7 @@ class MultiClass_Token_Classifier:
             else:
                 metric_to_monitor='val_micro_f1_multiclass'
                 
-            early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_micro_f1', patience=early_stop_patience,
+            early_stop = tf.keras.callbacks.EarlyStopping(monitor=metric_to_monitor, patience=early_stop_patience,
                                                           mode='max',
                                                           restore_best_weights=restore_best_weights)  # , restore_best_weights) <== auto tracks model weights with best scores
             callbacks.append(early_stop)
