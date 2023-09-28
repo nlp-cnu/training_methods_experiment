@@ -48,8 +48,14 @@ class Annotation:
 
         return concept, start, stop, tag
 
+    def test(self):
+        return self.text + " " + str(self.start) + ", " + str(self.end)
+
 
 def convert_i2b2():
+    #process_folders(['test_folder/concept', 'test_folder/txt'], 'test_convert')
+    #exit()
+    
     # set file names
     train_data_dir_beth = os.path.join("raw_data", "concept_assertion_relation_training_data", "beth", "txt")
     train_ann_dir_beth = os.path.join("raw_data", "concept_assertion_relation_training_data", "beth", "concept")
@@ -129,17 +135,30 @@ def process_document(doc, class_map, output_file):
     for line_index, line in enumerate(text.split("\n"), start=1):
         if not line:
             continue
-        #words = line.split()
-        words = re.findall(r'\b\w+\b|[^\s\w]', line)
+        words = line.split() # i2b2 is split purely on spaces
+        #words = re.findall(r'\b\w+\b|[^\s\w]', line)
+        #words = re.findall(r'\b\w+\b', line)
+        
         anns = np.zeros(len(words))
         cur_annotations = ann_dict.get(line_index, [])
-        for ann in cur_annotations:
+        for ann in cur_annotations:    
             class_ = class_map[ann.entity_class]
             start_index = ann.start[1]
             end_index = ann.end[1] + 1
             anns[start_index : end_index] = class_
-
         anns = anns.tolist()
+
+        # adjust annotations to account for other (non white-space)
+        #    delimiters used in later processing
+        all_delimiter_words = re.findall(r'\b\w+\b|[^\s\w]', line)
+        if len(all_delimiter_words) != len(words):
+            # there are subword labels that must be added
+            new_anns = []
+            for i, word in enumerate(words):
+                subwords = re.findall(r'\b\w+\b|[^\s\w]', word)
+                new_anns.extend([anns[i]]*len(subwords))
+            anns = new_anns
+        
         with open(output_file, 'a+') as of: # Writing everything to file
             of.write(f"{line}\t{anns}\n")
 

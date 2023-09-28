@@ -82,16 +82,16 @@ def run_experiment_3b():
         # create and train the intermediate classifier
         inter_classifier = MultiClass_Token_Classifier(language_model, num_classes, tokenizer, max_num_tokens)
         # TODO - just backprop thru the LM -- fine-tune the encoder for this task (NER)
-        #if PARTIAL_UNFREEZING:
-        #    print("Training the inter-Decoder only")
-        #    # train the decoder
-        #    inter_classifier.language_model.trainable = False
-        #    inter_val_csv_log_file = os.path.join(test_results_path, f"INTER_{language_model_name}_validation_decoder.csv")
-        #    inter_classifier.train(inter_train_data, inter_train_labels,
-        #                           validation_data=(inter_val_data, inter_val_labels),
-        #                           csv_log_file=inter_val_csv_log_file,
-        #                           early_stop_patience=EARLY_STOPPING_PATIENCE,
-        #                           restore_best_weights=True)
+        if PARTIAL_UNFREEZING:
+            print("Training the inter-Decoder only")
+            # train the decoder
+            inter_classifier.language_model.trainable = False
+            inter_val_csv_log_file = os.path.join(test_results_path, f"INTER_{language_model_name}_validation_decoder.csv")
+            inter_classifier.train(inter_train_data, inter_train_labels,
+                                   validation_data=(inter_val_data, inter_val_labels),
+                                   csv_log_file=inter_val_csv_log_file,
+                                   early_stop_patience=EARLY_STOPPING_PATIENCE,
+                                   restore_best_weights=True)
 
         inter_classifier.language_model.trainable = True
         inter_val_csv_log_file = os.path.join(test_results_path, f"INTER_{language_model_name}_validation.csv")
@@ -144,12 +144,11 @@ def run_experiment_3b():
                                        early_stop_patience=EARLY_STOPPING_PATIENCE,
                                        restore_best_weights=True)
 
-            # TODO - don't backprop thru the LM when fine-tuning (pure transfer learning. just train the decoder)
             # train the full network
-            #classifier.language_model.trainable = True
-            #val_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_validation_{index}.csv")
-            #classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels), csv_log_file=val_csv_log_file,
-            #                 early_stop_patience=EARLY_STOPPING_PATIENCE, restore_best_weights=True)
+            classifier.language_model.trainable = True
+            val_csv_log_file = os.path.join(test_results_path, f"{dataset_name}_{language_model_name}_validation_{index}.csv")
+            classifier.train(train_data_, train_labels_, validation_data=(val_data, val_labels), csv_log_file=val_csv_log_file,
+                             early_stop_patience=EARLY_STOPPING_PATIENCE, restore_best_weights=True)
 
             # get the test set predictions
             predictions.append(classifier.predict(test_data))
