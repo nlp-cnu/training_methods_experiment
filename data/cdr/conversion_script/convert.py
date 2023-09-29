@@ -106,8 +106,7 @@ def process_all_samples(documents, output_file, class_map):
             next_sent_start = sent_end + amount_ws
 
             line_indexes.append(next_sent_start)
-        
-
+            
         for a in doc.annotations:
             index = 0
             while a.start >= line_indexes[index]: # Find line corresponding to this annotation
@@ -119,39 +118,44 @@ def process_all_samples(documents, output_file, class_map):
             ending_char = a.end - line_indexes[index]
             annotated_lines[index].append((starting_char, ending_char, a.entity_class, sentences[index][0][starting_char:ending_char]))
 
-        lines_and_annotations = list(zip(sentences, annotated_lines)) # Now have all of the sentences and annotation character spans
+        # Now have all of the sentences and annotation character spans
+        lines_and_annotations = list(zip(sentences, annotated_lines)) 
 
-        
-        for i, line_annotations in enumerate(lines_and_annotations): # Now to process the annotations for each token
+
+        # Now to process the annotations for each token
+        for i, line_annotations in enumerate(lines_and_annotations):
             line, annotations = line_annotations
             line = line[0]
-            #tokens = line.split()
-            tokens = re.findall(r'\b\w+\b|[^\s\w]', line)
-            last_index = 0
+            tokens_and_spaces = re.findall(r'\b\w+\b|[^\s\w]|[\s]', line)
+                
             token_spans = []
+            #previous_token_length = 0
+            t_start = 0
+            t_end = 0
+            for token in tokens_and_spaces:
+                t_end = t_start + len(token) - 1 
+                # only add non-white-space tokens
+                if re.match(r'[^\s]', token):
+                    token_spans.append((t_start, t_end))
+                t_start = t_end + 1 #previous_token_length
 
-            for t in tokens: # In case there are weird spaces between tokens
-                t_start = line.find(t, last_index)
-                t_end = t_start + len(t)
-                last_index = t_end
-                token_spans.append((t_start, t_end))
+            # Default is none/outside class
+            anns = [class_map[NONE_CLASS] for _ in token_spans]
 
-            anns = [class_map[NONE_CLASS] for _ in tokens] # Default is none/outside class
-
-
-            for start, end, entity_type, text in annotations: # Mapping annotations to the correct tokens
+            # Mapping annotations to the correct tokens
+            for start, end, entity_type, text in annotations:
                 token_index = 0
-                while start not in range(token_spans[token_index][0], token_spans[token_index][1] + 1):
+
+                while start not in range(token_spans[token_index][0], token_spans[token_index][1]+1):
                     token_index += 1
                 start_index = token_index
 
-                while end not in range(token_spans[token_index][0], token_spans[token_index][1] + 1):
+                while end not in range(token_spans[token_index][0], token_spans[token_index][1]+2):
                     token_index += 1
                 end_index = token_index
 
                 for i in range(start_index, end_index + 1):
                     anns[i] = class_map[entity_type]
-
 
             with open(output_file, 'a+') as of: # Writing everything to file
                 of.write(f"{line}\t{anns}\n")
