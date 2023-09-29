@@ -55,18 +55,14 @@ class MultiClass_Token_Classifier:
             activation = 'softmax'
             loss_function = 'categorical_crossentropy'
 
-
-
-        lstm_size = 128
-        bilstm_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(units=lstm_size, return_sequences=True))
-        bilstm_out = bilstm_layer(embeddings)
-
-        output_layer = tf.keras.layers.Dense(self.num_classes, activation=activation)
-        final_output = output_layer(bilstm_out)
-
-            
+        #lstm_size = 128
+        #bilstm_layer = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(units=lstm_size, return_sequences=True))
+        #bilstm_out = bilstm_layer(embeddings)
         #output_layer = tf.keras.layers.Dense(self.num_classes, activation=activation)
-        #final_output = output_layer(embeddings)
+        #final_output = output_layer(bilstm_out)
+   
+        output_layer = tf.keras.layers.Dense(self.num_classes, activation=activation)
+        final_output = output_layer(embeddings)
 
         self.model = Model(inputs=[input_ids, input_padding_mask], outputs=[final_output])
         optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, weight_decay=0.1)
